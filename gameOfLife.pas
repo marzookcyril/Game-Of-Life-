@@ -1,1 +1,2 @@
 PROGRAM gameOfLife;
+Uses Crt;
