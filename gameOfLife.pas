@@ -9,9 +9,9 @@ USES Crt;
 
 CONST 
 	M    = 1;
-	N    = 3;
-	MORT = 0;
-	VIE  = 1;
+	N    = 5;
+	MORT = FALSE;
+	VIE  = TRUE;
 	
 TYPE typePosition = RECORD
 	x, y : INTEGER;
@@ -19,7 +19,7 @@ END;
 
 TYPE tabPosition = array [0..M] of typePosition;
 	
-TYPE typeGrille  = array [0..N, 0..N] of INTEGER;
+TYPE typeGrille  = array [0..N - 1, 0..N - 1] of BOOLEAN;
 
 PROCEDURE writeLigne();
 VAR
@@ -48,7 +48,7 @@ BEGIN
 		BEGIN
 			FOR j := 0 TO N - 1 DO
 			BEGIN
-				IF(grille[i DIV 2, j] = 1) then
+				IF(grille[i DIV 2, j] = TRUE) then
 					write('|', '█')
 				else
 					write('|', ' ');
@@ -63,9 +63,9 @@ PROCEDURE setToZero(VAR grille : typeGrille);
 VAR
 	i, j : INTEGER;
 BEGIN
-	FOR i := 0 TO N DO
+	FOR i := 0 TO N - 1 DO
 	BEGIN
-		FOR j := 0 TO N DO
+		FOR j := 0 TO N - 1 DO
 		BEGIN
 			grille[i, j] := MORT;
 		END;
@@ -86,28 +86,39 @@ BEGIN
 	remplirGrille := grille;
 END;
 
-//writeln('x + i : ',x + i,',y + j : ',y + j,', (x + i) MOD N : ',(x + i) MOD N,', (y + j) MOD N : ',(y + j) MOD N,', ii : ', ii,', jj : ',jj,' : RESULT : ');
+//writeln('x + i : ',x + i,',y + j : ',y + j,', (x + i) MOD N : ',(x + i) MOD N,', (y + j) MOD N : ',(y + j) MOD N,', ii : ', ii,', l : ',l,' : RESULT : ');
 
 FUNCTION calculerValeurCellule(grille : typeGrille; x, y : INTEGER) : INTEGER;
 VAR
-	result, i, j, ii, jj : integer;
+	result, i, j, k, l : integer;
 BEGIN
 	result := 0;
 	FOR i := -1 TO 1 DO
 	BEGIN
 		FOR j := -1 TO 1 DO
 		BEGIN
-			ii := (x + i) MOD N;
-			jj := (y + j) MOD N;
-			writeln('ii : ', ii, ' ,jj : ', jj);
-			if (ii < 0) then
-				ii := N + ii;
-			if (jj < 0) then
-				jj := N + jj;
-			writeln('NOUVEAU ii : ', ii, ' ,jj : ', jj);
+			//k := (x + i) MOD N;
+			//l := (y + j) MOD N;
+			k := (x + i);
+			l := (y + j);
+			//writeln('k : ', k, ' ,l : ', l);
+			if(k > N) then
+				k := 0;
+			if (l > N) then
+				l := 0;
+			if (k < 0) then
+				k := N - 1;
+			if (l < 0) then
+				l := N - 1;
+			if(grille[k, l] = TRUE) then
+				result := result + 1;
+			//writeln(grille[k, l]);
+			//writeln('NOUVEAU k : ', k, ' ,l : ', l, ' grille[k, l] : ', grille[k, l]);
 		END;
 	END;
-	result := result - grille[x, y];
+	if(grille[x, y] = TRUE) then
+				result := result - 1;
+	//writeln('x :', x, ',y : ', y, ' = ', result);
 	calculerValeurCellule := result;
 END;
 
@@ -121,12 +132,30 @@ BEGIN
 		FOR y := 0 TO N - 1 DO
 		BEGIN
 			valeur := calculerValeurCellule(grille, x, y);
-			IF (((valeur <= 1) or (valeur >= 4)) and (grille[x,y] = VIE)) then
-				nouvelleGrille[x,y] := MORT;
-			IF ((valeur = 2) or (valeur = 3) and (grille[x,y] = VIE)) then
-				nouvelleGrille[x,y] := VIE;
-			IF ((valeur = 3) and (grille[x,y] = MORT)) then
-				nouvelleGrille[x,y] := VIE;
+			IF (grille[x,y] = VIE) then
+			BEGIN
+				IF ((valeur = 3) or (valeur = 2)) THEN
+				BEGIN
+					//writeln('still alive', x, y);
+					nouvelleGrille[x,y]:= VIE;
+				END
+				ELSE
+					//writeln('VIE -> MORT', x, y);
+					nouvelleGrille[x,y]:= MORT;
+			END
+			ELSE
+			BEGIN
+				IF (valeur = 3) THEN
+				BEGIN
+					//writeln('naissance', x, y);
+					nouvelleGrille[x,y]:= VIE;
+				END
+				ELSE
+				BEGIN
+					//writeln('rip', x, y);
+					nouvelleGrille[x,y]:= MORT;
+				END;
+			END;
 		END;
 	END;
 	calculerNouvelleGrille := nouvelleGrille;
@@ -144,7 +173,7 @@ BEGIN
 	BEGIN
 		x := random(N);
 		y := random(N);
-		WHILE grille[x, y] <> 0 DO
+		WHILE grille[x, y] <> FALSE DO
 		BEGIN
 			x := random(N);
 			y := random(N);
@@ -159,12 +188,13 @@ VAR
 	next ,grille : typeGrille;
 BEGIN
 	Randomize;
-	grille := initGrille(50);
+	grille := initGrille(25);
 	writeln('GRILLE DE DEPART');
 	afficherGrille(grille);
 	calculerValeurCellule(grille, 0, 0);
-	{next := calculerNouvelleGrille(grille);
+	writeln('DEBUG');
+	next := calculerNouvelleGrille(grille);
 	writeln('GENERATION 1');
-	afficherGrille(next);}
+	afficherGrille(next);
 END.
 
