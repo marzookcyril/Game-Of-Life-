@@ -1,5 +1,6 @@
 PROGRAM gameOfLife;
-USES Crt;
+USES Crt, sysutils;
+
 
 {
 *	M    = taille par défault d'un vecteur de tabPosition
@@ -55,6 +56,30 @@ BEGIN
 			END;
 			writeln('|');
 		END;
+	END;
+END;
+
+FUNCTION readTableauPosition(s : string) : tabPosition;
+VAR
+	g,d,L,i,ii : INTEGER;
+	tableau : tabPosition;
+	position : typePosition;
+BEGIN
+	i := 0;
+	REPEAT 
+		l := length(s);
+		g := pos('(', s);
+		d := pos(')' , s);
+		position.x := strtoint(copy(s, g+1, 1));
+		position.y := strtoint(copy(s, d-1, 1));
+		s := copy(s, g+1, l - length(copy(s, 1, l - d)));
+		tableau[i] := position;
+		inc(i);
+		writeln('boucle');
+	UNTIL (s = ']');
+	FOR ii := 0 TO i do
+	BEGIN
+		writeln(tableau[i].x, ' , ', tableau[i].y);
 	END;
 END;
 
@@ -187,7 +212,7 @@ END;
 VAR
 	next ,grille : typeGrille;
 BEGIN
-	Randomize;
+	{Randomize;
 	grille := initGrille(25);
 	writeln('GRILLE DE DEPART');
 	afficherGrille(grille);
@@ -195,6 +220,7 @@ BEGIN
 	writeln('DEBUG');
 	next := calculerNouvelleGrille(grille);
 	writeln('GENERATION 1');
-	afficherGrille(next);
+	afficherGrille(next); }
+	readTableauPosition('[(100 200)]')
 END.
 
