@@ -13,6 +13,7 @@ CONST
 	N    = 5;
 	MORT = FALSE;
 	VIE  = TRUE;
+	DEBUG = TRUE;
 	
 TYPE typePosition = RECORD
 	x, y : INTEGER;
@@ -22,40 +23,21 @@ TYPE tabPosition = array [0..M] of typePosition;
 	
 TYPE typeGrille  = array [0..N - 1, 0..N - 1] of BOOLEAN;
 
-PROCEDURE writeLigne();
-VAR
-	i : INTEGER;
-BEGIN
-	write('+');
-	FOR i := 0 TO 2 * (N - 1) DO
-	BEGIN
-		write('-');
-	END;
-	write('+');
-END;
 
 PROCEDURE afficherGrille(grille :  typeGrille);
 VAR
 	i,j : INTEGER;
 BEGIN
-	FOR i := 0 TO 2 * N DO
+	FOR i := 0 TO N - 1 DO
 	BEGIN
-		IF (i MOD 2 = 0) then
+		FOR j := 0 TO N - 1 DO
 		BEGIN
-			writeLigne();
-			writeln();
-		END
-		ELSE
-		BEGIN
-			FOR j := 0 TO N - 1 DO
-			BEGIN
-				IF(grille[i DIV 2, j] = TRUE) then
-					write('|', '█')
-				else
-					write('|', ' ');
-			END;
-			writeln('|');
+			IF(grille[i,j] = VIE) THEN
+				write(' v')
+			ELSE
+				write(' .');
 		END;
+		writeln();
 	END;
 END;
 
@@ -111,8 +93,6 @@ BEGIN
 	remplirGrille := grille;
 END;
 
-//writeln('x + i : ',x + i,',y + j : ',y + j,', (x + i) MOD N : ',(x + i) MOD N,', (y + j) MOD N : ',(y + j) MOD N,', ii : ', ii,', l : ',l,' : RESULT : ');
-
 FUNCTION calculerValeurCellule(grille : typeGrille; x, y : INTEGER) : INTEGER;
 VAR
 	result, i, j, k, l : integer;
@@ -122,28 +102,18 @@ BEGIN
 	BEGIN
 		FOR j := -1 TO 1 DO
 		BEGIN
-			//k := (x + i) MOD N;
-			//l := (y + j) MOD N;
-			k := (x + i);
-			l := (y + j);
-			//writeln('k : ', k, ' ,l : ', l);
-			if(k > N) then
-				k := 0;
-			if (l > N) then
-				l := 0;
+			k := (x + i) MOD N;
+			l := (y + j) MOD N;
 			if (k < 0) then
 				k := N - 1;
 			if (l < 0) then
 				l := N - 1;
 			if(grille[k, l] = TRUE) then
 				result := result + 1;
-			//writeln(grille[k, l]);
-			//writeln('NOUVEAU k : ', k, ' ,l : ', l, ' grille[k, l] : ', grille[k, l]);
 		END;
 	END;
 	if(grille[x, y] = TRUE) then
 				result := result - 1;
-	//writeln('x :', x, ',y : ', y, ' = ', result);
 	calculerValeurCellule := result;
 END;
 
@@ -161,23 +131,19 @@ BEGIN
 			BEGIN
 				IF ((valeur = 3) or (valeur = 2)) THEN
 				BEGIN
-					//writeln('still alive', x, y);
 					nouvelleGrille[x,y]:= VIE;
 				END
 				ELSE
-					//writeln('VIE -> MORT', x, y);
 					nouvelleGrille[x,y]:= MORT;
 			END
 			ELSE
 			BEGIN
 				IF (valeur = 3) THEN
 				BEGIN
-					//writeln('naissance', x, y);
 					nouvelleGrille[x,y]:= VIE;
 				END
 				ELSE
 				BEGIN
-					//writeln('rip', x, y);
 					nouvelleGrille[x,y]:= MORT;
 				END;
 			END;
@@ -209,18 +175,44 @@ BEGIN
 	initGrille := grille;
 END;
 
+FUNCTION compteCellule(grille : typeGrille) : INTEGER;
 VAR
-	next ,grille : typeGrille;
+	i, result : INTEGER;
 BEGIN
-	{Randomize;
+	result := 0;
+	FOR i := 0 TO N * N - 1 DO
+	BEGIN
+		IF (grille[i MOD N, i DIV N] = VIE) THEN
+			result := result + 1
+	END;
+	compteCellule := result;
+END;
+
+FUNCTION run(grilleInitiale : typeGrille; n : INTEGER) : typeGrille;
+VAR
+	tmp : integer;
+BEGIN
+	tmp := 0;
+	REPEAT
+		grilleInitiale := calculerNouvelleGrille(grilleInitiale);
+		inc(tmp);
+		IF DEBUG THEN
+		BEGIN
+			writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
+			afficherGrille(grilleInitiale);
+		END;
+	UNTIL ((compteCellule(grilleInitiale) = 0) or (tmp > n));
+	run := grilleInitiale;
+END;
+
+VAR
+	grille : typeGrille;
+BEGIN
+	Randomize;
 	grille := initGrille(25);
 	writeln('GRILLE DE DEPART');
 	afficherGrille(grille);
-	calculerValeurCellule(grille, 0, 0);
-	writeln('DEBUG');
-	next := calculerNouvelleGrille(grille);
-	writeln('GENERATION 1');
-	afficherGrille(next); }
-	readTableauPosition('[(100 200)]')
+	run(grille, 10);
+	//readTableauPosition('[(100 200)]')
 END.
 
