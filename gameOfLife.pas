@@ -9,7 +9,7 @@ USES Crt, sysutils;
 * }
 
 CONST 
-	M    = 1;
+	M    = 5;
 	N    = 5;
 	MORT = FALSE;
 	VIE  = TRUE;
@@ -41,28 +41,41 @@ BEGIN
 	END;
 END;
 
+FUNCTION nombreOccurence(s : string; c : char) : INTEGER;
+VAR
+	i, res : integer;
+BEGIN
+	res := 0;
+	FOR i := 1 TO length(s) DO
+	BEGIN
+		IF (s[i] = c) then
+			inc(res);
+	END;
+	nombreOccurence := res;
+END;
+
 FUNCTION readTableauPosition(s : string) : tabPosition;
 VAR
-	g,d,L,i,ii : INTEGER;
 	tableau : tabPosition;
 	position : typePosition;
-BEGIN
-	i := 0;
-	REPEAT 
-		l := length(s);
-		g := pos('(', s);
-		d := pos(')' , s);
-		position.x := strtoint(copy(s, g+1, 1));
-		position.y := strtoint(copy(s, d-1, 1));
-		s := copy(s, g+1, l - length(copy(s, 1, l - d)));
-		tableau[i] := position;
-		inc(i);
-		writeln('boucle');
-	UNTIL (s = ']');
-	FOR ii := 0 TO i do
+	stringTmp : string;
+	i, counter : integer;
+BEGIN 
+	counter := 1;
+	FOR i := 0 TO length(s) DO
 	BEGIN
-		writeln(tableau[i].x, ' , ', tableau[i].y);
+		IF (s[i] = '(') THEN
+		BEGIN
+			stringTmp := copy(s, i, length(s));
+			position.x := strtoint(copy(stringTmp, 2, pos(' ', stringTmp) - 2));
+			writeln('posX : ', position.x);
+			position.y := strtoint(copy(stringTmp, pos(' ', stringTmp) + 1, pos(')', stringTmp) - pos(' ', stringTmp) - 1));
+			writeln('posY : ', position.y);
+			tableau[counter] := position;
+		END;
+		inc(counter);
 	END;
+	readTableauPosition := tableau;
 END;
 
 //on met la grille a zero
@@ -209,10 +222,9 @@ VAR
 	grille : typeGrille;
 BEGIN
 	Randomize;
-	grille := initGrille(25);
-	writeln('GRILLE DE DEPART');
+	{writeln('GRILLE DE DEPART');
 	afficherGrille(grille);
-	run(grille, 10);
-	//readTableauPosition('[(100 200)]')
+	run(grille, 10);}
+	readTableauPosition('[(100 200)(101 200)(102 200)]')
 END.
 
