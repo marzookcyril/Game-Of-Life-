@@ -10,7 +10,7 @@ USES Crt, sysutils;
 
 CONST 
 	M    = 5;
-	N    = 5;
+	N    = 15;
 	MORT = FALSE;
 	VIE  = TRUE;
 	DEBUG = TRUE;
@@ -72,8 +72,9 @@ BEGIN
 			position.y := strtoint(copy(stringTmp, pos(' ', stringTmp) + 1, pos(')', stringTmp) - pos(' ', stringTmp) - 1));
 			writeln('posY : ', position.y);
 			tableau[counter] := position;
+			inc(counter);
+			writeln(counter);
 		END;
-		inc(counter);
 	END;
 	readTableauPosition := tableau;
 END;
@@ -99,9 +100,9 @@ VAR
 		i 	   : INTEGER;
 BEGIN
 	setToZero(grille);
-	FOR i := 0 TO M DO
+	FOR i := 1 TO M DO
 	BEGIN
-		grille[tableau[i].x, tableau[i].y] := VIE;
+		grille[tableau[i].y, tableau[i].x] := VIE;
 	END;
 	remplirGrille := grille;
 END;
@@ -219,12 +220,20 @@ BEGIN
 END;
 
 VAR
-	grille : typeGrille;
+	grille  : typeGrille;
+	tableau : tabPosition;
+	i : integer;
 BEGIN
 	Randomize;
 	{writeln('GRILLE DE DEPART');
+	grille := initGrille(25);
 	afficherGrille(grille);
 	run(grille, 10);}
-	readTableauPosition('[(100 200)(101 200)(102 200)]')
+	tableau := readTableauPosition('[(6 6)(5 8)(6 8)(7 8)(7 7)]');
+	grille := remplirGrille(tableau);
+	afficherGrille(grille);
+	grille := calculerNouvelleGrille(grille);
+	writeln();
+	run(grille, 20);
 END.
 
