@@ -236,5 +236,3 @@ BEGIN
 	writeln();
 	run(grille, 20);
 END.
-
-// COUCOU
