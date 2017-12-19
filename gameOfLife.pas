@@ -214,8 +214,10 @@ BEGIN
 		inc(tmp);
 		IF DEBUG THEN
 		BEGIN
+			ClrScr;
 			writeln('GRILLE GENERATION : ', tmp, ' / ', n);
 			afficherGrille(grilleInitiale);
+			Delay(500);
 		END;
 	UNTIL ((compteCellule(grilleInitiale) = 0) or (tmp > n));
 	run := grilleInitiale;
@@ -251,6 +253,7 @@ BEGIN
 	REPEAT
 		writeln(' --> 1   : Choisir le pourcentage de cellules vivantes');
 		writeln(' --> 2   : Entrer les positions sois même');
+		writeln(' --> 3   : Entrer les positions par une string');
 		writeln(' --> 12  : Quitter');
 		readln(choix);
 		IF  (choix = 1) or (choix = 2) THEN 
@@ -311,11 +314,7 @@ BEGIN
 		
 END;
 
-VAR
-	grille : typeGrille;
-	tableau : tabPosition;
 BEGIN
 	Randomize;
 	menu;
 END.
-
