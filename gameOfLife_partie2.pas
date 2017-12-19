@@ -35,7 +35,7 @@ BEGIN
 			IF(grille[i,j] = VIE) THEN
 				write(' v')
 			ELSE
-				write(' .');
+				write(' ·');
 		END;
 		writeln();
 	END;
@@ -211,15 +211,13 @@ BEGIN
 	tmp := 0;
 	REPEAT
 		grilleInitiale := calculerNouvelleGrille(grilleInitiale);
-		inc(tmp);
-		IF DEBUG THEN
-		BEGIN
-			ClrScr;
-			writeln('GRILLE GENERATION : ', tmp, ' / ', n);
-			afficherGrille(grilleInitiale);
-			Delay(500);
-		END;
-	UNTIL ((compteCellule(grilleInitiale) = 0) or (tmp > n));
+		if (n > 0) then
+			inc(tmp);
+		ClrScr;
+		writeln('GRILLE GENERATION : ', tmp, ' / ', n);
+		afficherGrille(grilleInitiale);
+		Delay(500);
+	UNTIL ((compteCellule(grilleInitiale) = 0) or ((tmp > n) and (n > 0)));
 	run := grilleInitiale;
 END;
 
