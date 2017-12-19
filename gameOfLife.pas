@@ -11,8 +11,8 @@ USES Crt, sysutils;
 CONST 
 	M    = 5;
 	N    = 15;
-	MORT = FALSE;
-	VIE  = TRUE;
+	MORT = 0;
+	VIE  = 1;
 	DEBUG = TRUE;
 	
 TYPE typePosition = RECORD
@@ -21,7 +21,7 @@ END;
 
 TYPE tabPosition = array [0..M] of typePosition;
 	
-TYPE typeGrille  = array [0..N - 1, 0..N - 1] of BOOLEAN;
+TYPE typeGrille  = array [0..N - 1, 0..N - 1] of INTEGER;
 
 
 PROCEDURE afficherGrille(grille :  typeGrille);
@@ -40,6 +40,7 @@ BEGIN
 		writeln();
 	END;
 END;
+
 
 FUNCTION nombreOccurence(s : string; c : char) : INTEGER;
 VAR
@@ -100,9 +101,10 @@ VAR
 		i 	   : INTEGER;
 BEGIN
 	setToZero(grille);
-	FOR i := 1 TO M DO
+	FOR i := 0 TO M DO
 	BEGIN
-		grille[tableau[i].y, tableau[i].x] := VIE;
+		IF ((tableau[i].x >= 0) and (tableau[i].x < N)) and ((tableau[i].y >= 0) and (tableau[i].y < N)) then
+			grille[tableau[i].x, tableau[i].y] := VIE
 	END;
 	remplirGrille := grille;
 END;
@@ -122,11 +124,11 @@ BEGIN
 				k := N - 1;
 			if (l < 0) then
 				l := N - 1;
-			if(grille[k, l] = TRUE) then
+			if(grille[k, l] = VIE) then
 				result := result + 1;
 		END;
 	END;
-	if(grille[x, y] = TRUE) then
+	if(grille[x, y] = VIE) then
 				result := result - 1;
 	calculerValeurCellule := result;
 END;
@@ -178,7 +180,7 @@ BEGIN
 	BEGIN
 		x := random(N);
 		y := random(N);
-		WHILE grille[x, y] <> FALSE DO
+		WHILE grille[x, y] <> MORT DO
 		BEGIN
 			x := random(N);
 			y := random(N);
@@ -212,27 +214,108 @@ BEGIN
 		inc(tmp);
 		IF DEBUG THEN
 		BEGIN
-			writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
+			writeln('GRILLE GENERATION : ', tmp, ' / ', n);
 			afficherGrille(grilleInitiale);
 		END;
 	UNTIL ((compteCellule(grilleInitiale) = 0) or (tmp > n));
 	run := grilleInitiale;
 END;
 
+FUNCTION verifierSiExiste(tableau : tabPosition; posX, posY, index : integer) :  boolean;
 VAR
-	grille  : typeGrille;
-	tableau : tabPosition;
+	stop : boolean;
 	i : integer;
 BEGIN
+	stop := false;
+	i := 0;
+	REPEAT
+		IF ((tableau[i].x = posX) and (tableau[i].y = posY)) then
+		BEGIN
+			stop := true;
+			verifierSiExiste := true;
+		END;
+		inc(i);
+	UNTIL (i >= index) or (stop);
+	if not stop then
+		verifierSiExiste := false;
+END;
+
+PROCEDURE menu;
+VAR
+	choix, p , g, nbrPosition, i : integer;
+	posX, posY : integer;
+	grille   : typeGrille;
+	position : typePosition;
+	tableau  : tabPosition;
+BEGIN
+	REPEAT
+		writeln(' --> 1   : Choisir le pourcentage de cellules vivantes');
+		writeln(' --> 2   : Entrer les positions sois même');
+		writeln(' --> 12  : Quitter');
+		readln(choix);
+		IF  (choix = 1) or (choix = 2) THEN 
+		BEGIN
+			IF (choix = 1) THEN 
+			BEGIN
+				ClrScr;
+				writeln(' Quel est le pourcentage?');
+				readln(p);
+				grille := initGrille(p);
+				writeln('Maintenant, combien de générations souhaitez vous générer?');
+				readln(g);
+				ClrScr;
+				writeln('Grille de départ :');
+				afficherGrille(grille);
+				run(grille , g);
+			END;
+			IF (choix = 2) THEN
+			BEGIN
+				ClrScr;
+				REPEAT
+					writeln('Combien de positions voulez vous rentrer ?');
+					readln(nbrPosition);
+				UNTIL (nbrPosition <= M);
+				FOR i := 0 TO nbrPosition - 1 DO
+				BEGIN
+					REPEAT
+						ClrScr;
+						writeln('Rentrez l''abscisse du point n°', i, ' : ');
+						readln(posX);
+						writeln('Rentrez l''ordonnée du point n°', i, ' : ');
+						readln(posY);
+					UNTIL (((posX >= 0) and (posX < N)) and ((posY >= 0) and (posY < N)) and not verifierSiExiste(tableau ,posX, posY, i));
+					position.x := posX;
+					position.y := posY;
+					tableau[i] := position;
+				END;
+				position.x := -1;
+				position.y := -1;
+				FOR i := nbrPosition + 1 TO M DO
+				BEGIN
+					tableau[i] := position;
+				END;
+				ClrScr;
+				grille := remplirGrille(tableau);
+				writeln('Maintenant, combien de générations souhaitez vous générer?');
+				readln(g);
+				ClrScr;
+				writeln('Grille de départ :');
+				afficherGrille(grille);
+				run(grille , g);
+			END;
+			
+		END;
+	UNTIL (choix = 12);
+	ClrScr;
+	writeln('Bye, bye');
+		
+END;
+
+VAR
+	grille : typeGrille;
+	tableau : tabPosition;
+BEGIN
 	Randomize;
-	{writeln('GRILLE DE DEPART');
-	grille := initGrille(25);
-	afficherGrille(grille);
-	run(grille, 10);}
-	tableau := readTableauPosition('[(6 6)(5 8)(6 8)(7 8)(7 7)]');
-	grille := remplirGrille(tableau);
-	afficherGrille(grille);
-	grille := calculerNouvelleGrille(grille);
-	writeln();
-	run(grille, 20);
+	menu;
 END.
+
