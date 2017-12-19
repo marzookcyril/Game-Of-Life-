@@ -72,7 +72,7 @@ BEGIN
 	BEGIN
 		IF((vecteurPositionsHerbes[i].x > 0) and (vecteurPositionsHerbes[i].y > 0)) THEN
 			grille[vecteurPositionsHerbes[i].x, vecteurPositionsHerbes[i].y] := 'h-'
-	END;
+	END; 
 	FOR i := 0 TO M DO
 	BEGIN
 		IF((vecteurPositionsHerbes[i].x > 0) and (vecteurPositionsHerbes[i].y > 0)) THEN
