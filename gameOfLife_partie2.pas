@@ -1,30 +1,35 @@
 PROGRAM gameOfLife;
 USES Crt, sysutils;
 
-
 {
-*	M    = taille par défault d'un vecteur de tabPosition
-*	N    = taille de la grille
-* 	MORT = état MORT de la cellule
+* 
+* 	Par convention si la vie de l'herbe est négative, l'herbe est morte.
+* 
 * }
 
 CONST 
 	M    = 5;
 	N    = 15;
-	MORT = 0;
-	VIE  = 1;
-	DEBUG = TRUE;
-	
+	ENERGIE = 4;
+	AGE_MORT = 5;
+	ENERGIE_REPRODUCTION = 10;
+	ENERGIE_INITIALE = 1;
+
+
 TYPE typePosition = RECORD
 	x, y : INTEGER;
 END;
-
-TYPE tabPosition = array [0..M] of typePosition;
 	
-TYPE typeGrille  = array [0..N - 1, 0..N - 1] of INTEGER;
+TYPE typeHerbe = RECORD
+	age : INTEGER;
+	energie : INTEGER;
+END;
 
+TYPE tabPosition = array [0..M] of typePosition;	
 
-PROCEDURE afficherGrille(grille :  typeGrille);
+TYPE typeGeneration = array [0..N - 1, 0..N - 1] of typeHerbe;
+
+PROCEDURE afficherGeneration(generation : typeGeneration);
 VAR
 	i,j : INTEGER;
 BEGIN
@@ -32,8 +37,8 @@ BEGIN
 	BEGIN
 		FOR j := 0 TO N - 1 DO
 		BEGIN
-			IF(grille[i,j] = VIE) THEN
-				write(' v')
+			IF(generation[i,j].age >= 0) THEN
+				write(' ', generation[i,j].age)
 			ELSE
 				write(' ·');
 		END;
@@ -41,79 +46,50 @@ BEGIN
 	END;
 END;
 
-
-FUNCTION nombreOccurence(s : string; c : char) : INTEGER;
-VAR
-	i, res : integer;
-BEGIN
-	res := 0;
-	FOR i := 1 TO length(s) DO
-	BEGIN
-		IF (s[i] = c) then
-			inc(res);
-	END;
-	nombreOccurence := res;
-END;
-
-FUNCTION readTableauPosition(s : string) : tabPosition;
-VAR
-	tableau : tabPosition;
-	position : typePosition;
-	stringTmp : string;
-	i, counter : integer;
-BEGIN 
-	counter := 1;
-	FOR i := 0 TO length(s) DO
-	BEGIN
-		IF (s[i] = '(') THEN
-		BEGIN
-			stringTmp := copy(s, i, length(s));
-			position.x := strtoint(copy(stringTmp, 2, pos(' ', stringTmp) - 2));
-			writeln('posX : ', position.x);
-			position.y := strtoint(copy(stringTmp, pos(' ', stringTmp) + 1, pos(')', stringTmp) - pos(' ', stringTmp) - 1));
-			writeln('posY : ', position.y);
-			tableau[counter] := position;
-			inc(counter);
-			writeln(counter);
-		END;
-	END;
-	readTableauPosition := tableau;
-END;
-
-//on met la grille a zero
-PROCEDURE setToZero(VAR grille : typeGrille);
+PROCEDURE setToZero(VAR grille : typeGeneration);
 VAR
 	i, j : INTEGER;
+	morte : typeHerbe;
 BEGIN
+	morte.age := -1;
+	morte.energie := 0;
 	FOR i := 0 TO N - 1 DO
 	BEGIN
 		FOR j := 0 TO N - 1 DO
 		BEGIN
-			grille[i, j] := MORT;
+			grille[i, j] := morte;
 		END;
 	END;
 END;
 
-//on remplit la grille en fonction du tableau 
-FUNCTION remplirGrille(tableau : tabPosition) : typeGrille;
+FUNCTION initialiserGeneration(listePosition : tabPosition) : typeGeneration;
 VAR
-		grille : typeGrille;
-		i 	   : INTEGER;
+		prairie : typeGeneration;
+		i     : INTEGER;
+		herbe : typeHerbe;
 BEGIN
-	setToZero(grille);
-	FOR i := 0 TO M DO
+	herbe.age := 0;
+	herbe.energie := 1;
+
+	setToZero(prairie);
+
+	FOR i := 0 TO M - 1 DO
 	BEGIN
-		IF ((tableau[i].x >= 0) and (tableau[i].x < N)) and ((tableau[i].y >= 0) and (tableau[i].y < N)) then
-			grille[tableau[i].x, tableau[i].y] := VIE
+		IF (listePosition[i].x > 0) and (listePosition[i].y > 0) THEN
+			prairie[listePosition[i].x, listePosition[i].y] := herbe;
 	END;
-	remplirGrille := grille;
+	
+	
+	initialiserGeneration := prairie;
 END;
 
-FUNCTION calculerValeurCellule(grille : typeGrille; x, y : INTEGER) : INTEGER;
+FUNCTION reproduire(prairie : typeGeneration; x, y : integer) : typeGeneration;
 VAR
-	result, i, j, k, l : integer;
+	herbe : typeHerbe;
+	i, j, k, l : integer;
 BEGIN
-	result := 0;
+	herbe.age := 0;
+	herbe.energie := 1;
 	FOR i := -1 TO 1 DO
 	BEGIN
 		FOR j := -1 TO 1 DO
@@ -124,195 +100,136 @@ BEGIN
 				k := N - 1;
 			if (l < 0) then
 				l := N - 1;
-			if(grille[k, l] = VIE) then
-				result := result + 1;
+			IF (prairie[k, l].age < 0) then
+				prairie[k, l] := herbe;
 		END;
 	END;
-	if(grille[x, y] = VIE) then
-				result := result - 1;
-	calculerValeurCellule := result;
-END;
+	reproduire := prairie;
+END;	
 
-FUNCTION calculerNouvelleGrille(grille : typeGrille) : typeGrille;
+FUNCTION calculerNouvelleGeneration(generation : typeGeneration) : typeGeneration;
 VAR
-	x, y, valeur : integer;
-	nouvelleGrille : typeGrille;
+	nouvellePrairie : typeGeneration;
+	morte : typeHerbe;
+	i, j : integer;
 BEGIN
-	FOR x := 0 TO N - 1 DO
+	morte.age := -1;
+	morte.energie := 0;
+	FOR i := 0 TO N - 1 DO
 	BEGIN
-		FOR y := 0 TO N - 1 DO
+		FOR j := 0 TO N - 1 DO
 		BEGIN
-			valeur := calculerValeurCellule(grille, x, y);
-			IF (grille[x,y] = VIE) then
+			if(generation[i, j].age >= 0) then
 			BEGIN
-				IF ((valeur = 3) or (valeur = 2)) THEN
+				inc(generation[i, j].age);
+				generation[i, j].energie := generation[i, j].energie + ENERGIE;
+				nouvellePrairie[i,j] := generation[i, j];
+							
+				IF (generation[i, j].age >= 5) THEN
+					nouvellePrairie[i, j] := morte;
+				IF ((generation[i, j].age < 5) and (generation[i, j].energie >= 10)) THEN
 				BEGIN
-					nouvelleGrille[x,y]:= VIE;
-				END
-				ELSE
-					nouvelleGrille[x,y]:= MORT;
+					nouvellePrairie := reproduire(nouvellePrairie, i, j);
+					nouvellePrairie[i, j].energie := generation[i, j].energie - ENERGIE_REPRODUCTION;
+				END;
 			END
 			ELSE
-			BEGIN
-				IF (valeur = 3) THEN
-				BEGIN
-					nouvelleGrille[x,y]:= VIE;
-				END
-				ELSE
-				BEGIN
-					nouvelleGrille[x,y]:= MORT;
-				END;
-			END;
+				nouvellePrairie[i, j] := morte;
 		END;
 	END;
-	calculerNouvelleGrille := nouvelleGrille;
+	calculerNouvelleGeneration := nouvellePrairie;
 END;
 
-//on remplit la grille de façon aléatoire en fonction d'un pourcentage
-FUNCTION initGrille(pourcentage : INTEGER) : typeGrille;
-VAR
-	x, y, nbrDeCellules : INTEGER;
-	grille : typeGrille;
-BEGIN
-	setToZero(grille);
-	nbrDeCellules := round((pourcentage / 100) * (N * N));
-	WHILE nbrDeCellules > 0 DO
-	BEGIN
-		x := random(N);
-		y := random(N);
-		WHILE grille[x, y] <> MORT DO
-		BEGIN
-			x := random(N);
-			y := random(N);
-		END;
-		grille[x, y] := VIE;
-		dec(nbrDeCellules);
-	END;
-	initGrille := grille;
-END;
-
-FUNCTION compteCellule(grille : typeGrille) : INTEGER;
+FUNCTION compteCellule(prairie : typeGeneration) : INTEGER;
 VAR
 	i, result : INTEGER;
 BEGIN
 	result := 0;
 	FOR i := 0 TO N * N - 1 DO
 	BEGIN
-		IF (grille[i MOD N, i DIV N] = VIE) THEN
+		IF (prairie[i MOD N, i DIV N].age >= 0) THEN
 			result := result + 1
 	END;
 	compteCellule := result;
 END;
 
-FUNCTION run(grilleInitiale : typeGrille; n : INTEGER) : typeGrille;
+FUNCTION run(prairie : typeGeneration; n : INTEGER) : typeGeneration;
 VAR
 	tmp : integer;
 BEGIN
 	tmp := 0;
 	REPEAT
-		grilleInitiale := calculerNouvelleGrille(grilleInitiale);
+		prairie := calculerNouvelleGeneration(prairie);
 		if (n > 0) then
 			inc(tmp);
 		ClrScr;
 		writeln('GRILLE GENERATION : ', tmp, ' / ', n);
-		afficherGrille(grilleInitiale);
-		Delay(500);
-	UNTIL ((compteCellule(grilleInitiale) = 0) or ((tmp > n) and (n > 0)));
-	run := grilleInitiale;
+		afficherGeneration(prairie);
+		Delay(1500);
+	UNTIL ((compteCellule(prairie) = 0) or ((tmp > n) and (n > 0)));
+	run := prairie;
 END;
 
-FUNCTION verifierSiExiste(tableau : tabPosition; posX, posY, index : integer) :  boolean;
+FUNCTION initPrairie(pourcentage : INTEGER) : typeGeneration;
 VAR
-	stop : boolean;
-	i : integer;
+	x, y, nbrDeCellules : INTEGER;
+	prairie : typeGeneration;
+	herbe : typeHerbe;
 BEGIN
-	stop := false;
-	i := 0;
-	REPEAT
-		IF ((tableau[i].x = posX) and (tableau[i].y = posY)) then
+	herbe.age := 0;
+	herbe.energie := 1;
+	setToZero(prairie);
+	nbrDeCellules := round((pourcentage / 100) * (N * N));
+	WHILE nbrDeCellules > 0 DO
+	BEGIN
+		x := random(N);
+		y := random(N);
+		WHILE prairie[x, y].age >= 0 DO
 		BEGIN
-			stop := true;
-			verifierSiExiste := true;
+			x := random(N);
+			y := random(N);
 		END;
-		inc(i);
-	UNTIL (i >= index) or (stop);
-	if not stop then
-		verifierSiExiste := false;
+		prairie[x, y] := herbe;
+		dec(nbrDeCellules);
+	END;
+	initPrairie := prairie;
 END;
 
-PROCEDURE menu;
+FUNCTION initPrairieByHand() : typeGeneration;
 VAR
-	choix, p , g, nbrPosition, i : integer;
-	posX, posY : integer;
-	grille   : typeGrille;
+	nbrHerbe, posX, posY,i  : integer;
+	tableau : tabPosition;
 	position : typePosition;
-	tableau  : tabPosition;
 BEGIN
-	REPEAT
-		writeln(' --> 1   : Choisir le pourcentage de cellules vivantes');
-		writeln(' --> 2   : Entrer les positions sois même');
-		writeln(' --> 3   : Entrer les positions par une string');
-		writeln(' --> 12  : Quitter');
-		readln(choix);
-		IF  (choix = 1) or (choix = 2) THEN 
-		BEGIN
-			IF (choix = 1) THEN 
-			BEGIN
-				ClrScr;
-				writeln(' Quel est le pourcentage?');
-				readln(p);
-				grille := initGrille(p);
-				writeln('Maintenant, combien de générations souhaitez vous générer?');
-				readln(g);
-				ClrScr;
-				writeln('Grille de départ :');
-				afficherGrille(grille);
-				run(grille , g);
-			END;
-			IF (choix = 2) THEN
-			BEGIN
-				ClrScr;
-				REPEAT
-					writeln('Combien de positions voulez vous rentrer ?');
-					readln(nbrPosition);
-				UNTIL (nbrPosition <= M);
-				FOR i := 0 TO nbrPosition - 1 DO
-				BEGIN
-					REPEAT
-						ClrScr;
-						writeln('Rentrez l''abscisse du point n°', i, ' : ');
-						readln(posX);
-						writeln('Rentrez l''ordonnée du point n°', i, ' : ');
-						readln(posY);
-					UNTIL (((posX >= 0) and (posX < N)) and ((posY >= 0) and (posY < N)) and not verifierSiExiste(tableau ,posX, posY, i));
-					position.x := posX;
-					position.y := posY;
-					tableau[i] := position;
-				END;
-				position.x := -1;
-				position.y := -1;
-				FOR i := nbrPosition + 1 TO M DO
-				BEGIN
-					tableau[i] := position;
-				END;
-				ClrScr;
-				grille := remplirGrille(tableau);
-				writeln('Maintenant, combien de générations souhaitez vous générer?');
-				readln(g);
-				ClrScr;
-				writeln('Grille de départ :');
-				afficherGrille(grille);
-				run(grille , g);
-			END;
-			
-		END;
-	UNTIL (choix = 12);
-	ClrScr;
-	writeln('Bye, bye');
-		
+	writeln('nbr herbe');
+	readln(nbrHerbe);
+	FOR i := 0 TO nbrHerbe - 1 DO
+	BEGIN
+		REPEAT
+			ClrScr;
+			writeln('Rentrez l''abscisse du point n°', i, ' : ');
+			readln(posX);
+			writeln('Rentrez l''ordonnée du point n°', i, ' : ');
+			readln(posY);
+		UNTIL (((posX >= 0) and (posX < N)) and ((posY >= 0) and (posY < N)));
+		position.x := posX;
+		position.y := posY;
+		tableau[i] := position;
+	END;
+	
+	FOR i:= nbrHerbe TO M DO
+	BEGIN
+		position.x := -1;
+		position.y := -1;
+		tableau[i] := position;
+	END;
+	initPrairieByHand := initialiserGeneration(tableau);
 END;
-
+VAR
+	prairie : typeGeneration;
 BEGIN
-	Randomize;
-	menu;
+	prairie := initPrairie(5);
+	writeln('Prairie Generée');
+	afficherGeneration(prairie);
+	run(prairie, -1);
 END.
