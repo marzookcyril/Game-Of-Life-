@@ -125,9 +125,9 @@ BEGIN
 				generation[i, j].energie := generation[i, j].energie + ENERGIE;
 				nouvellePrairie[i,j] := generation[i, j];
 							
-				IF (generation[i, j].age >= 5) THEN
+				IF (generation[i, j].age >= AGE_MORT) THEN
 					nouvellePrairie[i, j] := morte;
-				IF ((generation[i, j].age < 5) and (generation[i, j].energie >= 10)) THEN
+				IF ((generation[i, j].age < AGE_MORT) and (generation[i, j].energie >= ENERGIE_REPRODUCTION)) THEN
 				BEGIN
 					nouvellePrairie := reproduire(nouvellePrairie, i, j);
 					nouvellePrairie[i, j].energie := generation[i, j].energie - ENERGIE_REPRODUCTION;
