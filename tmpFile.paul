@@ -1,0 +1,151 @@
+FUNCTION calculerNouvelleGeneration(gen : typeGeneration2) : typeGeneration2;
+VAR
+	i, ii, j, k, l, x, y, counterElement, nbrMouton : integer;
+	grille : typeGrille;
+	vecteurObjects : array of typeElement;
+	nouveauMouton, mouton, herbe : typeElement;
+	pos : typePosition;
+	newGen : typeGeneration2;
+BEGIN
+	// on ne peut pas prevoir la taille de cet array
+	setLength(vecteurObjects, 2*N*N);
+	counterElement := 0;
+	nbrMouton := 0;
+	setToZero(grille);
+
+	writeln('la taille du vecteurObjects : ',gen.tailleVecteurObjects);
+	FOR i := 0 TO gen.tailleVecteurObjects - 1	 DO
+	BEGIN
+		// MOUTON
+		IF gen.vecteurObjects[i].element = ELEMENT_MOUTON THEN
+		BEGIN
+			// mourir
+			if (gen.vecteurObjects[i].age < AGE_MORT_MOUTON) THEN
+				nouveauMouton := gen.vecteurObjects[i];
+				inc(nouveauMouton.age);
+				// manger ?
+				if (gen.grille[gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y] = UNE_HERBE_ET_UN_MOUTON) THEN
+				BEGIN
+					grille[nouveauMouton.position.x, nouveauMouton.position.y] := UN_MOUTON;
+					nouveauMouton.energie := nouveauMouton.energie + 14; // TODO A remplacer par des CONST
+					vecteurObjects[counterElement] := nouveauMouton;
+					inc(counterElement);
+				END
+				ELSE
+				BEGIN
+					// reproduction
+					IF (gen.vecteurObjects[i].energie >= 20) THEN
+					BEGIN
+						pos := trouverCelluleNouveauMouton(gen.grille, gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y);
+						if pos.x > 0 then
+						BEGIN
+							// on cree le nouveau mouton
+							grille[pos.x, pos.y] := UN_MOUTON;
+							mouton := NOUVEAU_MOUTON;
+							mouton.position.x := pos.x;
+							mouton.position.y := pos.y;
+							vecteurObjects[counterElement] := mouton;
+							inc(counterElement);
+							// on garde l'ancien
+							grille[gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y] := UN_MOUTON;
+							gen.vecteurObjects[i].energie := gen.vecteurObjects[i].energie - 20;
+							vecteurObjects[counterElement] := gen.vecteurObjects[i];
+							inc(counterElement);
+						END;
+					END
+					ELSE
+					// deplacer le mouton
+					BEGIN
+						pos := trouverCellulePourDeplacement(gen.grille, gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y);
+						if pos.x > 0 then
+						BEGIN
+							grille[pos.x, pos.y] := UN_MOUTON;
+							gen.vecteurObjects[i].energie := gen.vecteurObjects[i].energie - 2;
+							vecteurObjects[counterElement] := gen.vecteurObjects[i];
+							inc(counterElement);
+						END
+						ELSE
+						// il ne fait rien
+						BEGIN
+							gen.vecteurObjects[i].energie := gen.vecteurObjects[i].energie - 1;
+							vecteurObjects[counterElement] := gen.vecteurObjects[i];
+							inc(counterElement);
+						END;
+					END;
+				END;
+		END;
+		nbrMouton := counterElement;
+		writeln('le nombre de moutons :', nbrMouton);
+		IF(gen.vecteurObjects[i].element = ELEMENT_HERBE) THEN
+		BEGIN
+			if gen.vecteurObjects[i].age < 5 then
+			BEGIN
+				inc(gen.vecteurObjects[i].age);
+				gen.vecteurObjects[i].energie := gen.vecteurObjects[i].energie + 4;
+				// reproduire l'herbe
+				if (gen.vecteurObjects[i].energie > 10) then
+				BEGIN
+					x := gen.vecteurObjects[i].position.x;
+					y := gen.vecteurObjects[i].position.y;
+					FOR ii := -1 TO 1 DO
+					BEGIN
+						FOR j := -1 TO 1 DO
+						BEGIN
+							k := (x + ii) MOD N;
+							l := (y + j) MOD N;
+							if (k < 0) then
+								k := N - 1;
+							if (l < 0) then
+								l := N - 1;
+							// on trouve une case sans herbe
+							IF (gen.grille[k, l] = UN_MOUTON) then
+							BEGIN
+								grille[k, l] := UNE_HERBE_ET_UN_MOUTON;
+								herbe := NOUVEAU_HERBE;
+								herbe.position.x := k;
+								herbe.position.y := l;
+								vecteurObjects[counterElement] := herbe;
+								inc(counterElement);
+							END
+							ELSE
+							BEGIN
+								IF (gen.grille[k, l] = LE_VIDE) then
+								BEGIN
+									grille[k, l] := UNE_HERBE;
+									herbe := NOUVEAU_HERBE;
+									herbe.position.x := k;
+									herbe.position.y := l;
+									vecteurObjects[counterElement] := herbe;
+									inc(counterElement);
+								END;
+							END;
+						END;
+					END;
+				END
+				ELSE
+				// l'herbe n'a pas assez d'energie
+				BEGIN
+					IF (grille[gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y] = UN_MOUTON) THEN
+					BEGIN
+						grille[gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y] := UNE_HERBE_ET_UN_MOUTON;
+						vecteurObjects[counterElement] := gen.vecteurObjects[i];
+						inc(counterElement);
+					END;
+					IF (grille[gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y] = LE_VIDE) THEN
+					BEGIN
+						grille[gen.vecteurObjects[i].position.x, gen.vecteurObjects[i].position.y] := UNE_HERBE;
+						vecteurObjects[counterElement] := gen.vecteurObjects[i];
+						inc(counterElement);
+					END;
+				END;
+			END;
+		END;
+	END;
+	writeln('Nombre herbes : ', counterElement - nbrMouton);
+	newGen.vecteurObjects := vecteurObjects;
+	writeln('nouveau vecteur :', counterElement);
+	setLength(newGen.vecteurObjects, counterElement);
+	newGen.tailleVecteurObjects := counterElement;
+	newGen.grille := grille;
+	calculerNouvelleGeneration := newGen;
+END;
