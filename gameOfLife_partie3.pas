@@ -52,7 +52,30 @@ BEGIN
 	BEGIN
 		FOR j := 0 TO N - 1 DO
 		BEGIN
-			write(gen.grille[i, j], ' ');
+			TextColor(White);
+			IF (gen.grille[i, j] = UNE_HERBE) THEN
+			BEGIN
+				TextColor(Green);
+				write('h');
+				TextColor(White);
+				write('- ');
+			END;
+			IF (gen.grille[i, j] = UN_MOUTON) THEN
+			BEGIN
+				write('-');
+				TextColor(Red);
+				write('m ');
+			END;
+			IF (gen.grille[i, j] = UNE_HERBE_ET_UN_MOUTON) THEN
+			BEGIN
+				TextColor(Green);
+				write('h');
+				TextColor(Red);
+				write('m ');
+			END;
+			IF (gen.grille[i, j] = LE_VIDE) THEN
+				write('-- ');
+
 		END;
 		writeln();
 	END;
