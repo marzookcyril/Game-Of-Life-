@@ -205,6 +205,7 @@ PROCEDURE calculerNextGenerationMouton(mouton : typeElement; oldGrille : typeGri
 VAR
 	nouveauMouton, bebeMouton : typeElement;
 	k, l, i, ii, j : integer;
+	herbe : typePosition;
 BEGIN
 	// le mouton veilli
 	inc(mouton.age);
@@ -266,6 +267,7 @@ BEGIN
 			ELSE
 			BEGIN
 				//writeln('Le mouton n°', nextGen.tailleVecteurObjects, ' se deplace (essais).');
+				herbe.x := -1;
 				FOR i := -1 TO 1 DO
 				BEGIN
 					FOR j := -1 TO 1 DO
@@ -276,13 +278,23 @@ BEGIN
 							k := N - 1;
 						if (l < 0) then
 							l := N - 1;
-						IF ((oldGrille[k, l] = LE_VIDE) or (oldGrille[k, l] = UNE_HERBE)) THEN
+						IF (oldGrille[k, l] = LE_VIDE) THEN
 						BEGIN
 							nouveauMouton.position.x := k;
 							nouveauMouton.position.y := l;
 						END;
-					END;
 
+						IF (oldGrille[k, l] = UNE_HERBE) THEN
+						BEGIN
+							herbe.x := k;
+							herbe.y := l;
+						END;
+					END;
+				END;
+
+				IF herbe.x <> -1 THEN
+				BEGIN
+					nouveauMouton.position := herbe;
 				END;
 
 				IF nouveauMouton.position.x <> mouton.position.x THEN
