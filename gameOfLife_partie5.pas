@@ -14,12 +14,12 @@ TYPE typeElement = RECORD
 END;
 
 CONST
-	M    				   = 5;
-	N    				   = 15;
+	M    				        = 5;
+	N    				        = 15;
 	ENERGIE                     = 4;
-	ENERGIE_MOUTON			   = 14;
-	AGE_MORT				   = 5;
-	ENERGIE_REPRODUCTION	   = 10;
+	ENERGIE_MOUTON			    = 14;
+	AGE_MORT				    = 5;
+	ENERGIE_REPRODUCTION	    = 10;
 	ENERGIE_REPRODUCTION_MOUTON = 20;
 	ENERGIE_INITIALE_MOUTON     = 11;
 	ENERGIE_INITIALE_LOUP       = 5;
@@ -28,7 +28,7 @@ CONST
 	LE_VIDE                     = '---';
 	UNE_HERBE                   = 'h--';
 	UN_MOUTON                   = '-m-';
-	UN_LOUP  				   = '--l';
+	UN_LOUP  				    = '--l';
 	LOUP_ET_HERBE               = 'h-l';
 	UNE_HERBE_ET_UN_MOUTON      = 'hm-';
 	MOUTON_ET_LOUP              = '-ml';

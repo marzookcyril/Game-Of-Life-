@@ -2,12 +2,12 @@ PROGRAM gameOfLife;
 USES Crt, sysutils;
 
 {
-* 
+*
 * 	Par convention si la vie de l'herbe est négative, l'herbe est morte.
-* 
+*
 * }
 
-CONST 
+CONST
 	M    = 5;
 	N    = 15;
 	ENERGIE = 4;
@@ -19,13 +19,13 @@ CONST
 TYPE typePosition = RECORD
 	x, y : INTEGER;
 END;
-	
+
 TYPE typeHerbe = RECORD
 	age : INTEGER;
 	energie : INTEGER;
 END;
 
-TYPE tabPosition = array [0..M] of typePosition;	
+TYPE tabPosition = array [0..M] of typePosition;
 
 TYPE typeGeneration = array [0..N - 1, 0..N - 1] of typeHerbe;
 
@@ -78,8 +78,8 @@ BEGIN
 		IF (listePosition[i].x > 0) and (listePosition[i].y > 0) THEN
 			prairie[listePosition[i].x, listePosition[i].y] := herbe;
 	END;
-	
-	
+
+
 	initialiserGeneration := prairie;
 END;
 
@@ -100,12 +100,12 @@ BEGIN
 				k := N - 1;
 			if (l < 0) then
 				l := N - 1;
-			IF (prairie[k, l].age < 0) then
+			IF (prairie[k, l].age <= 0) then
 				prairie[k, l] := herbe;
 		END;
 	END;
 	reproduire := prairie;
-END;	
+END;
 
 FUNCTION calculerNouvelleGeneration(generation : typeGeneration) : typeGeneration;
 VAR
@@ -124,9 +124,10 @@ BEGIN
 				inc(generation[i, j].age);
 				generation[i, j].energie := generation[i, j].energie + ENERGIE;
 				nouvellePrairie[i,j] := generation[i, j];
-							
+
 				IF (generation[i, j].age >= AGE_MORT) THEN
 					nouvellePrairie[i, j] := morte;
+
 				IF ((generation[i, j].age < AGE_MORT) and (generation[i, j].energie >= ENERGIE_REPRODUCTION)) THEN
 				BEGIN
 					nouvellePrairie := reproduire(nouvellePrairie, i, j);
@@ -216,7 +217,7 @@ BEGIN
 		position.y := posY;
 		tableau[i] := position;
 	END;
-	
+
 	FOR i:= nbrHerbe TO M DO
 	BEGIN
 		position.x := -1;
