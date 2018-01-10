@@ -1,5 +1,5 @@
 PROGRAM gameOfLife;
-USES Crt, sysutils;
+USES Crt, sysutils, gameOfLife_partie4;
 
 
 {
@@ -9,17 +9,11 @@ USES Crt, sysutils;
 * }
 
 CONST 
-	M    = 5;
+	M    = 20;
 	N    = 15;
 	MORT = 0;
 	VIE  = 1;
 	DEBUG = TRUE;
-	
-TYPE typePosition = RECORD
-	x, y : INTEGER;
-END;
-
-TYPE tabPosition = array [0..M] of typePosition;
 	
 TYPE typeGrille  = array [0..N - 1, 0..N - 1] of INTEGER;
 
@@ -312,7 +306,16 @@ BEGIN
 		
 END;
 
+VAR
+	grille : typeGrille;
+	test   : importFile;
 BEGIN
-	Randomize;
-	menu;
+	//Randomize;
+	//menu;
+	test := handleArgs();
+	IF (test.typeRun = 'R') then
+		grille := initGrille(test.randomPctg)
+	else
+		grille := remplirGrille(test.vecteur1);
+	run(grille, test.nbrGen);
 END.

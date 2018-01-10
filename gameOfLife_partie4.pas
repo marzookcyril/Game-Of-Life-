@@ -3,31 +3,36 @@ unit gameOfLife_partie4;
 INTERFACE
 uses Process, sysutils;
 
+CONST 
+	M = 20;
+
 TYPE typePosition = RECORD
 	x, y : INTEGER;
 END;
 
+type tabPosition = array [0..M] of typePosition;
+
 TYPE importFile = Record
 	nbrGen        : INTEGER;
-	random        : BOOLEAN;
-	vecteur1 : array of typePosition;
-	vecteur2 : array of typePosition;
+	typeRun       : STRING;
+	randomPctg    : INTEGER;
+	vecteur1      : tabPosition;
+	vecteur2      : tabPosition;
 END;
 
 
 FUNCTION  handleInportFile(fichier : string) : importFile;
-PROCEDURE handleOutputFile(fichier : string);
-PROCEDURE handleArgs();
+FUNCTION handleOutputFile(fichier : string) : importFile;
+FUNCTION handleArgs() : importFile;
 
 IMPLEMENTATION
 
-PROCEDURE handleVectorInput(s : string; VAR tableau : array of typePosition);
+PROCEDURE handleVectorInput(s : string; VAR tableau : tabPosition);
 VAR
 	position : typePosition;
 	stringTmp : string;
 	i, counter : integer;
-BEGIN 
-	setLength(tableau, 500);
+BEGIN
 	counter := 0;
 	FOR i := 0 TO length(s) DO
 	BEGIN
@@ -40,10 +45,9 @@ BEGIN
 			writeln('posY : ', position.y);
 			tableau[counter] := position;
 			inc(counter);
-			writeln(counter);
+			writeln('counter : ', counter);
 		END;
 	END;
-	setLength(tableau, counter);
 END;
 
 FUNCTION handleInportFile(fichier : string) : importFile;
@@ -54,7 +58,6 @@ VAR
 BEGIN
 	// on traite le fichier
 	
-	inFile.random := False;
 	assign(fic, fichier);
 	reset(fic);
 	if (IOResult <> 0) then 
@@ -63,14 +66,35 @@ BEGIN
 	BEGIN
 		REPEAT
 			readln(fic, ligne);
-			IF (pos('Position', ligne) <> 0) then
+			IF (pos('Position', ligne) <> 0) THEN
 			BEGIN
-				handleVectorInput(ligne, inFile.vecteur1)
+				IF (pos('PositionH', ligne) <> 0) then
+				BEGIN
+					writeln('1 : ', ligne);
+					inFile.typeRun := 'V';
+					handleVectorInput(ligne, inFile.vecteur2);
+				END
+				ELSE
+				BEGIN
+					IF (pos('PositionM', ligne) <> 0) then
+					BEGIN
+						inFile.typeRun := 'V';
+						writeln('2 : ', ligne);
+						handleVectorInput(ligne, inFile.vecteur1);
+					END
+					ELSE
+					BEGIN
+						writeln('3 : ', ligne);
+						inFile.typeRun := 'V';
+						handleVectorInput(ligne, inFile.vecteur1);
+					END;
+				END;
 			END;
-			
+					
 			IF (pos('Random', ligne) <> 0) then
 			BEGIN
-				inFile.random := True
+				inFile.typeRun := 'R';
+				inFile.randomPctg := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
 			END;
 			
 			IF (pos('NombreGeneration', ligne) <> 0) then
@@ -81,34 +105,38 @@ BEGIN
 			
 		UNTIL eof(fic);
 		close(fic);
+		
+		handleInportFile := inFile;
 	END;
 END;
 
-PROCEDURE handleOutputFile(fichier : string);
+FUNCTION handleOutputFile(fichier : string) : importFile;
 BEGIN
 END;
 
-PROCEDURE handleArgs();
+FUNCTION handleArgs() : importFile;
 VAR
 	 i : INTEGER;
 	 command : string;
 	 foo : ansiString;
+	 inFile : importFile;
 BEGIN
 	FOR i := 0 TO ParamCount DO
 	BEGIN
 		IF ((ParamStr(i) = '-i') and FileExists(ParamStr(i+1))) THEN
-			handleInportFile(ParamStr(i+1));
+			inFile := handleInportFile(ParamStr(i+1));
 		
 		IF (ParamStr(i) = '-o') THEN
 			IF FileExists(ParamStr(i+1)) THEN
-				handleOutputFile(ParamStr(i+1))
+				inFile := handleOutputFile(ParamStr(i+1))
 			ELSE
 			BEGIN
 				// si le fichier n'existe pas (possible) on le créé
 				command := 'touch ' + ParamStr(i+1);
 				RunCommand(command, foo);
-				handleOutputFile(ParamStr(i+1))
+				inFile := handleOutputFile(ParamStr(i+1))
 			END;
 	END;
+	handleArgs := inFile;
 END;
 END.

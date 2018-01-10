@@ -1,9 +1,5 @@
 PROGRAM gameOfLife;
-USES Crt, sysutils;
-
-TYPE typePosition = RECORD
-x, y : INTEGER;
-END;
+USES Crt, sysutils, gameOfLife_partie4;
 
 TYPE typeElement = RECORD
 	// element : mouton -> ELEMENT_MOUTON, herbe -> ELEMENT_HERBE
@@ -33,8 +29,6 @@ CONST
 	NOUVEAU_MOUTON              : typeElement = (element: ELEMENT_MOUTON; age: 0; energie: ENERGIE_INITIALE_MOUTON; position: (x: -1; y: -1));
 	NOUVEAU_HERBE               : typeElement = (element: ELEMENT_HERBE; age: 0; energie: ENERGIE_INITIALE_HERBE; position: (x: -1; y: -1));
 
-
-TYPE tabPosition = array [0..M] of typePosition;
 TYPE typeGrille  = array [0..N - 1, 0..N - 1] of String;
 
 TYPE typeGeneration2 = RECORD
@@ -440,27 +434,25 @@ VAR
 BEGIN
 	i := 0;
 	afficherGrille(gen);
-	Delay(2000);
-	WHILE ((i < nombreGen) and (gen.tailleVecteurObjects > 1)) DO
+	WHILE (((i < nombreGen) and (nombreGen > 0)) or (nombreGen < 0)) DO
 	BEGIN
 		ClrScr;
 		writeln('Nouvelle Generation : ', i);
-		writeln(gen.tailleVecteurObjects);
 		gen := calculerNouvelleGeneration(gen);
 		afficherGrille(gen);
 		IF (nombreGen > 0) THEN
 			inc(i);
-		Delay(2000);
+		Delay(500);
 	END;
 END;
 
 VAR
-	tabMouton, tabHerbe : tabPosition;
 	gen :  typeGeneration2;
+	test : importFile;
 	i : integer;
 BEGIN
-	tabMouton := initPrairieByHand('mouton');
-	tabHerbe := initPrairieByHand('herbe');
-	gen := initGeneration2(tabMouton, tabHerbe);
-	runGeneration2(gen, 20);
+	test := handleArgs();
+	gen := initGeneration2(test.vecteur1, test.vecteur2);
+	writeln('nbrGen :', test.nbrGen);
+	runGeneration2(gen, test.nbrGen);
 END.
