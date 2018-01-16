@@ -1,47 +1,14 @@
 PROGRAM gameOfLife;
 USES Crt, sysutils, gameOfLife_partie4;
 
-TYPE typeElement = RECORD
-	// element : mouton -> ELEMENT_MOUTON, herbe -> ELEMENT_HERBE
-	element  : STRING;
-	age      : INTEGER;
-	energie  : INTEGER;
-	position : typePosition;
-END;
-
-CONST
-	M    				   = 5;
-	N    				   = 15;
-	ENERGIE                     = 4;
-	ENERGIE_MOUTON			   = 14;
-	AGE_MORT				   = 5;
-	ENERGIE_REPRODUCTION	   = 10;
-	ENERGIE_REPRODUCTION_MOUTON = 20;
-	ENERGIE_INITIALE_MOUTON     = 11;
-	ENERGIE_INITIALE_HERBE      = 1;
-	AGE_MORT_MOUTON             = 15;
-	LE_VIDE                     = '--';
-	UNE_HERBE                   = 'h-';
-	UN_MOUTON                   = '-m';
-	UNE_HERBE_ET_UN_MOUTON      = 'hm';
-	ELEMENT_MOUTON              = 'MOUTON';
-	ELEMENT_HERBE               = 'HERBE';
-	NOUVEAU_MOUTON              : typeElement = (element: ELEMENT_MOUTON; age: 0; energie: ENERGIE_INITIALE_MOUTON; position: (x: -1; y: -1));
-	NOUVEAU_HERBE               : typeElement = (element: ELEMENT_HERBE; age: 0; energie: ENERGIE_INITIALE_HERBE; position: (x: -1; y: -1));
-
-TYPE typeGrille  = array [0..N - 1, 0..N - 1] of String;
-
-TYPE typeGeneration2 = RECORD
-	// la taille de vecteurObjects est defini à chaque tour avec setLength(array, tailleVecteurObjects)
-	vecteurObjects       : array of typeElement;
-	tailleVecteurObjects : INTEGER;
-	grille               : typeGrille;
-END;
+VAR
+	nombreGeneration : integer;
 
 PROCEDURE afficherGrille(gen : typeGeneration2);
 VAR
 	i,j : INTEGER;
 BEGIN
+	logGrillePart3(gen, nombreGeneration);
 	FOR i := 0 TO N - 1 DO
 	BEGIN
 		FOR j := 0 TO N - 1 DO
@@ -75,7 +42,7 @@ BEGIN
 	END;
 END;
 
-PROCEDURE setToZero(VAR grille : typeGrille);
+PROCEDURE setToZero(VAR grille : typeGrilleString);
 VAR
 	i, j : INTEGER;
 BEGIN
@@ -91,7 +58,7 @@ END;
 FUNCTION initGeneration2(vecteurPositionsMoutons, vecteurPositionsHerbes : tabPosition) : typeGeneration2;
 VAR
 	gen    : typeGeneration2;
-	grille : typeGrille;
+	grille : typeGrilleString;
 	i, counterElement      : integer;
 	herbe, mouton : typeElement;
 BEGIN
@@ -218,7 +185,7 @@ END;
 
 // un mouton est calculé en fonction de lui-même, de l'ancienne grille et de la nouvelle grille (pour eviter les repetitions)
 // tout est fait sur nextGen.
-PROCEDURE calculerNextGenerationMouton(mouton : typeElement; oldGrille : typeGrille; VAR nextGen : typeGeneration2);
+PROCEDURE calculerNextGenerationMouton(mouton : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2);
 VAR
 	nouveauMouton, bebeMouton : typeElement;
 	k, l, i, ii, j : integer;
@@ -332,7 +299,7 @@ BEGIN
 	END;
 END;
 
-FUNCTION calculerNextGenerationHerbe(herbe : typeElement; oldGrille : typeGrille; VAR nextGen : typeGeneration2) : typeElement;
+FUNCTION calculerNextGenerationHerbe(herbe : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2) : typeElement;
 VAR
 	nouvelleHerbe, bebeHerbe : typeElement;
 	k, l, i, j : integer;
@@ -443,6 +410,7 @@ BEGIN
 		IF (nombreGen > 0) THEN
 			inc(i);
 		Delay(500);
+		inc(nombreGeneration); 
 	END;
 END;
 

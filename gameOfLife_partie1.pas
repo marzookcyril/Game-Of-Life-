@@ -1,27 +1,14 @@
 PROGRAM gameOfLife;
 USES Crt, sysutils, gameOfLife_partie4;
 
-
-{
-*	M    = taille par défault d'un vecteur de tabPosition
-*	N    = taille de la grille
-* 	MORT = état MORT de la cellule
-* }
-
-CONST 
-	M    = 20;
-	N    = 15;
-	MORT = 0;
-	VIE  = 1;
-	DEBUG = TRUE;
-	
-TYPE typeGrille  = array [0..N - 1, 0..N - 1] of INTEGER;
-
+VAR
+	nombreGeneration : integer;
 
 PROCEDURE afficherGrille(grille :  typeGrille);
 VAR
-	i,j : INTEGER;
+	i, j : INTEGER;
 BEGIN
+	logGrillePart1(grille, nombreGeneration);
 	FOR i := 0 TO N - 1 DO
 	BEGIN
 		FOR j := 0 TO N - 1 DO
@@ -34,7 +21,6 @@ BEGIN
 		writeln();
 	END;
 END;
-
 
 FUNCTION nombreOccurence(s : string; c : char) : INTEGER;
 VAR
@@ -208,9 +194,10 @@ BEGIN
 		if (n > 0) then
 			inc(tmp);
 		ClrScr;
-		writeln('GRILLE GENERATION : ', tmp, ' / ', n);
+		writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
 		afficherGrille(grilleInitiale);
 		Delay(500);
+		inc(nombreGeneration);
 	UNTIL ((compteCellule(grilleInitiale) = 0) or ((tmp > n) and (n > 0)));
 	run := grilleInitiale;
 END;

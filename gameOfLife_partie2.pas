@@ -1,31 +1,14 @@
 PROGRAM gameOfLife;
 USES Crt, sysutils, gameOfLife_partie4;
 
-{
-*
-* 	Par convention si la vie de l'herbe est négative, l'herbe est morte.
-*
-* }
-
-CONST
-	M    = 5;
-	N    = 15;
-	ENERGIE = 4;
-	AGE_MORT = 5;
-	ENERGIE_REPRODUCTION = 10;
-	ENERGIE_INITIALE = 1;
-
-TYPE typeHerbe = RECORD
-	age : INTEGER;
-	energie : INTEGER;
-END;
-
-TYPE typeGeneration = array [0..N - 1, 0..N - 1] of typeHerbe;
+VAR
+	nombreGeneration : integer;
 
 PROCEDURE afficherGeneration(generation : typeGeneration);
 VAR
 	i,j : INTEGER;
 BEGIN
+	logGrillePart2(generation, nombreGeneration);
 	FOR i := 0 TO N - 1 DO
 	BEGIN
 		FOR j := 0 TO N - 1 DO
@@ -157,9 +140,10 @@ BEGIN
 		if (n > 0) then
 			inc(tmp);
 		ClrScr;
-		writeln('GRILLE GENERATION : ', tmp, ' / ', n);
+		writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
 		afficherGeneration(prairie);
 		Delay(1500);
+		inc(nombreGeneration);
 	UNTIL ((compteCellule(prairie) = 0) or ((tmp > n) and (n > 0)));
 	run := prairie;
 END;
@@ -223,10 +207,6 @@ VAR
 	prairie : typeGeneration;
 	test    : importFile;
 BEGIN
-	{prairie := initPrairie(5);
-	writeln('Prairie Generée');
-	afficherGeneration(prairie);
-	run(prairie, -1);}
 	test := handleArgs();
 	IF (test.typeRun = 'R') then
 		prairie := initPrairie(test.randomPctg)
