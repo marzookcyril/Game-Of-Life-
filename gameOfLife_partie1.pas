@@ -290,15 +290,12 @@ BEGIN
 	UNTIL (choix = 12);
 	ClrScr;
 	writeln('Bye, bye');
-		
 END;
 
 VAR
 	grille : typeGrille;
 	test   : importFile;
 BEGIN
-	//Randomize;
-	//menu;
 	test := handleArgs();
 	IF (test.typeRun = 'R') then
 		grille := initGrille(test.randomPctg)

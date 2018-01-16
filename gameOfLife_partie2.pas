@@ -192,7 +192,7 @@ BEGIN
 		UNTIL (((posX >= 0) and (posX < N)) and ((posY >= 0) and (posY < N)));
 		position.x := posX;
 		position.y := posY;
-		tableau[i] := position;
+		 v tableau[i] := position;
 	END;
 
 	FOR i:= nbrHerbe TO M DO
