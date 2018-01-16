@@ -62,71 +62,60 @@ END;
 FUNCTION reproduire(prairie : typeGeneration; x, y : integer) : typeGeneration;
 VAR
 	herbe : typeHerbe;
-	nouvellePrairie : typeGeneration;
 	i, j, k, l : integer;
 BEGIN
 	herbe.age := 0;
 	herbe.energie := 1;
-	setToZero(nouvellePrairie);
 	FOR i := -1 TO 1 DO
 	BEGIN
 		FOR j := -1 TO 1 DO
 		BEGIN
 			k := (x + i) MOD N;
 			l := (y + j) MOD N;
-			
+
 			if (k < 0) then
 				k := N - 1;
-				
+
 			if (l < 0) then
 				l := N - 1;
-			
-			writeln(k, ' ', l);
-			writeln(prairie[k, l].age);
-			
+
 			IF (prairie[k, l].age < 0) then
-			BEGIN
-				writeln('je suis la');
-				nouvellePrairie[k, l] := herbe;
-			End
-			else
-			BEGIN
-				nouvellePrairie[k, l] := prairie[k, l];
-			END;
+				prairie[k, l] := herbe;
 		END;
 	END;
-	reproduire := nouvellePrairie;
+	reproduire := prairie;
 END;
 
 FUNCTION calculerNouvelleGeneration(generation : typeGeneration) : typeGeneration;
 VAR
 	nouvellePrairie : typeGeneration;
-	morte : typeHerbe;
 	i, j : integer;
 BEGIN
-	morte.age := -1;
-	morte.energie := 0;
+	nouvellePrairie := generation;
+
 	FOR i := 0 TO N - 1 DO
 	BEGIN
 		FOR j := 0 TO N - 1 DO
 		BEGIN
-			if(generation[i, j].age >= 0) then
+			IF (generation[i, j].age >= 0) THEN
 			BEGIN
-				inc(generation[i, j].age);
-				generation[i, j].energie := generation[i, j].energie + ENERGIE;
-				nouvellePrairie[i,j] := generation[i, j];
+				inc(nouvellePrairie[i,j].age);
+				nouvellePrairie[i, j].energie := nouvellePrairie[i, j].energie + ENERGIE;
 
-				IF (generation[i, j].age >= AGE_MORT) THEN
-					nouvellePrairie[i, j] := morte;
-
-				IF ((generation[i, j].age < AGE_MORT) and (generation[i, j].energie >= ENERGIE_REPRODUCTION)) THEN
+				IF (nouvellePrairie[i, j].age >= AGE_MORT) THEN
 				BEGIN
-					nouvellePrairie := reproduire(nouvellePrairie, i, j);
-					nouvellePrairie[i, j].energie := generation[i, j].energie - ENERGIE_REPRODUCTION;
+					nouvellePrairie[i, j].age := -1;
+					nouvellePrairie[i, j].energie := 0;
+				END
+				ELSE
+				BEGIN
+					IF (generation[i, j].energie >= ENERGIE_REPRODUCTION) THEN
+					BEGIN
+						nouvellePrairie := reproduire(nouvellePrairie, i, j);
+						nouvellePrairie[i, j].energie := nouvellePrairie[i, j].energie - ENERGIE_REPRODUCTION;
+					END;
 				END;
-			END
-			ELSE
-				nouvellePrairie[i, j] := morte;
+			END;
 		END;
 	END;
 	calculerNouvelleGeneration := nouvellePrairie;

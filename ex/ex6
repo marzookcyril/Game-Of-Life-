@@ -1,4 +1,3 @@
 Herbe
-Position = [(2 1)]
- (3 2)(1 3) (2 3) (3 3)
-NombreGeneration=3
+Position = [(2 1)(5 9)(1 3)(2 3)(3 3)]
+NombreGeneration=20
