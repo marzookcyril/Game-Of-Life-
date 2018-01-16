@@ -75,6 +75,7 @@ TYPE typeGeneration2 = RECORD
 END;
 
 TYPE importFile = Record
+	partie        : INTEGER;
 	nbrGen        : INTEGER;
 	typeRun       : STRING;
 	randomPctg    : INTEGER;
@@ -82,7 +83,6 @@ TYPE importFile = Record
 	vecteur2      : tabPosition;
 END;
 
-FUNCTION handleInportFile(fichier : string) : importFile;
 FUNCTION handleArgs() : importFile;
 PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
 PROCEDURE logGrillePart2(gen : typeGeneration; ng : integer);
@@ -103,21 +103,18 @@ BEGIN
 		BEGIN
 			stringTmp := copy(s, i, length(s));
 			position.x := strtoint(copy(stringTmp, 2, pos(' ', stringTmp) - 2));
-			writeln('posX : ', position.x);
 			position.y := strtoint(copy(stringTmp, pos(' ', stringTmp) + 1, pos(')', stringTmp) - pos(' ', stringTmp) - 1));
-			writeln('posY : ', position.y);
 			tableau[counter] := position;
 			inc(counter);
-			writeln('counter : ', counter);
 		END;
 	END;
 END;
 
-FUNCTION handleInportFile(fichier : string) : importFile;
+FUNCTION handleInportFile(fichier : string; inFile : importFile) : importFile;
 VAR
-	inFile : importFile;
 	ligne : string;
 	fic   : text;	
+	textPartie : boolean;
 BEGIN
 	// on traite le fichier
 	
@@ -126,14 +123,35 @@ BEGIN
 	if (IOResult <> 0) then 
 		writeln('Le fichier n''existe pas')
 	else
+	textPartie := False;
 	BEGIN
 		REPEAT
 			readln(fic, ligne);
+			
+			IF ((pos('Vie', ligne) <> 0) and (inFile.partie = 1)) THEN
+			BEGIN
+				textPartie := True;
+			END;
+			
+			IF ((pos('Herbe', ligne) <> 0) and (inFile.partie = 2)) THEN
+			BEGIN
+				textPartie := True;
+			END;
+			
+			IF ((pos('Mouton', ligne) <> 0) and (inFile.partie = 3)) THEN
+			BEGIN
+				textPartie := True;
+			END;
+			
+			IF ((pos('Loup', ligne) <> 0) and (inFile.partie = 4)) THEN
+			BEGIN
+				textPartie := True;
+			END;
+			
 			IF (pos('Position', ligne) <> 0) THEN
 			BEGIN
 				IF (pos('PositionH', ligne) <> 0) then
 				BEGIN
-					writeln('1 : ', ligne);
 					inFile.typeRun := 'V';
 					handleVectorInput(ligne, inFile.vecteur2);
 				END
@@ -142,12 +160,10 @@ BEGIN
 					IF (pos('PositionM', ligne) <> 0) then
 					BEGIN
 						inFile.typeRun := 'V';
-						writeln('2 : ', ligne);
 						handleVectorInput(ligne, inFile.vecteur1);
 					END
 					ELSE
 					BEGIN
-						writeln('3 : ', ligne);
 						inFile.typeRun := 'V';
 						handleVectorInput(ligne, inFile.vecteur1);
 					END;
@@ -163,13 +179,18 @@ BEGIN
 			IF (pos('NombreGeneration', ligne) <> 0) then
 			BEGIN
 				inFile.nbrGen := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
-				writeln('nombre de generation : ' , inFile.nbrGen);
 			END;
 			
-		UNTIL eof(fic);
+		UNTIL eof(fic) or not textPartie;
 		close(fic);
 		
-		handleInportFile := inFile;
+		IF not textPartie THEN
+		BEGIN
+			writeln('Le fichier -i ne peut pas etre utilisé pour ce type de simulation. (ex: on ne fait pas de simulation de jeu de la vie avec des positions de moutons)');
+			Halt (1);
+		END
+		ELSE
+			handleInportFile := inFile;
 	END;
 END;
 
@@ -260,10 +281,18 @@ VAR
 	 inFile : importFile;
 	 // variable globale
 BEGIN
+	FOR i := 1 TO 4 DO
+	BEGIN
+		IF pos('partie' + inttostr(i), ParamStr(0)) <> 0 THEN
+		BEGIN
+			inFile.partie := i;
+		END;
+	END;
+	
 	FOR i := 0 TO ParamCount DO
 	BEGIN
 		IF ((ParamStr(i) = '-i') and FileExists(ParamStr(i+1))) THEN
-			inFile := handleInportFile(ParamStr(i+1));
+			inFile := handleInportFile(ParamStr(i+1), inFile);
 		
 		IF (ParamStr(i) = '-o') THEN
 			IF FileExists(ParamStr(i+1)) THEN
