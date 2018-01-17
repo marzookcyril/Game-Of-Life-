@@ -1,5 +1,5 @@
 PROGRAM gameOfLife;
-USES Crt, sysutils, gameOfLife_partie4;
+USES gameOfLife_partie4, Crt;
 
 VAR
 	nombreGeneration : integer;
@@ -22,6 +22,7 @@ BEGIN
 	END;
 END;
 
+// compte le nombre d'occurence d'un char c dans une string s.
 FUNCTION nombreOccurence(s : string; c : char) : INTEGER;
 VAR
 	i, res : integer;
@@ -33,31 +34,6 @@ BEGIN
 			inc(res);
 	END;
 	nombreOccurence := res;
-END;
-
-FUNCTION readTableauPosition(s : string) : tabPosition;
-VAR
-	tableau : tabPosition;
-	position : typePosition;
-	stringTmp : string;
-	i, counter : integer;
-BEGIN 
-	counter := 1;
-	FOR i := 0 TO length(s) DO
-	BEGIN
-		IF (s[i] = '(') THEN
-		BEGIN
-			stringTmp := copy(s, i, length(s));
-			position.x := strtoint(copy(stringTmp, 2, pos(' ', stringTmp) - 2));
-			writeln('posX : ', position.x);
-			position.y := strtoint(copy(stringTmp, pos(' ', stringTmp) + 1, pos(')', stringTmp) - pos(' ', stringTmp) - 1));
-			writeln('posY : ', position.y);
-			tableau[counter] := position;
-			inc(counter);
-			writeln(counter);
-		END;
-	END;
-	readTableauPosition := tableau;
 END;
 
 //on met la grille a zero
@@ -74,7 +50,7 @@ BEGIN
 	END;
 END;
 
-//on remplit la grille en fonction du tableau 
+//on remplit la grille en fonction du tableau
 FUNCTION remplirGrille(tableau : tabPosition) : typeGrille;
 VAR
 		grille : typeGrille;
@@ -89,6 +65,7 @@ BEGIN
 	remplirGrille := grille;
 END;
 
+//la valeur d'une cellule est son nombre de voisin. Cette fonction compte le nombre de voisins.
 FUNCTION calculerValeurCellule(grille : typeGrille; x, y : INTEGER) : INTEGER;
 VAR
 	result, i, j, k, l : integer;
@@ -108,8 +85,11 @@ BEGIN
 				result := result + 1;
 		END;
 	END;
+	
+	// la cellule elle-même n'est pas comptée comme voisin.
 	if(grille[x, y] = VIE) then
-				result := result - 1;
+		result := result - 1;
+
 	calculerValeurCellule := result;
 END;
 
@@ -148,7 +128,7 @@ BEGIN
 	calculerNouvelleGrille := nouvelleGrille;
 END;
 
-//on remplit la grille de façon aléatoire en fonction d'un pourcentage
+//on remplit la grille de façon aléatoire en fonction d'un pourcentage (entre 0 et 100).
 FUNCTION initGrille(pourcentage : INTEGER) : typeGrille;
 VAR
 	x, y, nbrDeCellules : INTEGER;
@@ -193,15 +173,20 @@ BEGIN
 		grilleInitiale := calculerNouvelleGrille(grilleInitiale);
 		if (n > 0) then
 			inc(tmp);
+		
 		ClrScr;
+		
 		writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
 		afficherGrille(grilleInitiale);
 		Delay(500);
+		
 		inc(nombreGeneration);
 	UNTIL ((compteCellule(grilleInitiale) = 0) or ((tmp > n) and (n > 0)));
+	
 	run := grilleInitiale;
 END;
 
+// on verifie si les positions d'un tableau existent deja ou non
 FUNCTION verifierSiExiste(tableau : tabPosition; posX, posY, index : integer) :  boolean;
 VAR
 	stop : boolean;
@@ -221,6 +206,41 @@ BEGIN
 		verifierSiExiste := false;
 END;
 
+// genere un tableau de position en fonction de données rentrées à la main.
+FUNCTION genererTableau() : tabPosition;
+VAR
+	nbrPosition, i, posX, posY : INTEGER;
+	position                   : typePosition;
+	tableau                    : tabPosition;
+BEGIN
+	ClrScr;
+	REPEAT
+		writeln('Combien de positions voulez vous rentrer ?');
+		readln(nbrPosition);
+	UNTIL (nbrPosition <= 	M);
+	FOR i := 0 TO nbrPosition - 1 DO
+	BEGIN
+		REPEAT
+			ClrScr;
+			writeln('Rentrez l''abscisse du point n°', i, ' : ');
+			readln(posX);
+			writeln('Rentrez l''ordonnée du point n°', i, ' : ');
+			readln(posY);
+		UNTIL (((posX >= 0) and (posX < N)) and ((posY >= 0) and (posY < N)) and not verifierSiExiste(tableau ,posX, posY, i));
+		position.x := posX;
+		position.y := posY;
+		tableau[i] := position;
+	END;
+	position.x := -1;
+	position.y := -1;
+	FOR i := nbrPosition + 1 TO M DO
+	BEGIN
+		tableau[i] := position;
+	END;
+	ClrScr;
+	genererTableau := tableau;
+END;
+
 PROCEDURE menu;
 VAR
 	choix, p , g, nbrPosition, i : integer;
@@ -235,9 +255,9 @@ BEGIN
 		writeln(' --> 3   : Entrer les positions par une string');
 		writeln(' --> 12  : Quitter');
 		readln(choix);
-		IF  (choix = 1) or (choix = 2) THEN 
+		IF  (choix = 1) or (choix = 2) THEN
 		BEGIN
-			IF (choix = 1) THEN 
+			IF (choix = 1) THEN
 			BEGIN
 				ClrScr;
 				writeln(' Quel est le pourcentage?');
@@ -252,32 +272,7 @@ BEGIN
 			END;
 			IF (choix = 2) THEN
 			BEGIN
-				ClrScr;
-				REPEAT
-					writeln('Combien de positions voulez vous rentrer ?');
-					readln(nbrPosition);
-				UNTIL (nbrPosition <= M);
-				FOR i := 0 TO nbrPosition - 1 DO
-				BEGIN
-					REPEAT
-						ClrScr;
-						writeln('Rentrez l''abscisse du point n°', i, ' : ');
-						readln(posX);
-						writeln('Rentrez l''ordonnée du point n°', i, ' : ');
-						readln(posY);
-					UNTIL (((posX >= 0) and (posX < N)) and ((posY >= 0) and (posY < N)) and not verifierSiExiste(tableau ,posX, posY, i));
-					position.x := posX;
-					position.y := posY;
-					tableau[i] := position;
-				END;
-				position.x := -1;
-				position.y := -1;
-				FOR i := nbrPosition + 1 TO M DO
-				BEGIN
-					tableau[i] := position;
-				END;
-				ClrScr;
-				grille := remplirGrille(tableau);
+				grille := remplirGrille(genererTableau());
 				writeln('Maintenant, combien de générations souhaitez vous générer?');
 				readln(g);
 				ClrScr;
@@ -285,7 +280,7 @@ BEGIN
 				afficherGrille(grille);
 				run(grille , g);
 			END;
-			
+
 		END;
 	UNTIL (choix = 12);
 	ClrScr;
@@ -294,12 +289,19 @@ END;
 
 VAR
 	grille : typeGrille;
-	test   : importFile;
+	args   : importFile;
 BEGIN
-	test := handleArgs();
-	IF (test.typeRun = 'R') then
-		grille := initGrille(test.randomPctg)
+
+	{
+	* 	L'utilisation de handleArgs() (de la partie 4) est expliqué
+	* 	en détail dans le fichier LaTeX.
+	* }
+
+	args := handleArgs();
+	IF (args.typeRun = 'R') then
+		grille := initGrille(args.randomPctg)
 	else
-		grille := remplirGrille(test.vecteur1);
-	run(grille, test.nbrGen);
+		grille := remplirGrille(args.vecteur1);
+		
+	run(grille, args.nbrGen);
 END.

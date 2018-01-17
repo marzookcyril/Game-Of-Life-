@@ -1,7 +1,7 @@
 unit gameOfLife_partie4;
 
 INTERFACE
-uses Process, sysutils;
+uses Crt, Process, sysutils;
 
 VAR
 	outPutFile : string;
@@ -12,7 +12,7 @@ CONST
 TYPE typePosition = RECORD
 	x, y : INTEGER;
 END;
-	
+
 type tabPosition = array [0..M] of typePosition;
 
 // type général pour chaque entité (herbe, mouton, loup ou autre...)
@@ -24,13 +24,13 @@ TYPE typeElement = RECORD
 END;
 
 CONST
-	N    				        = 20;
+	N    				   = 20;
 	VIE                         = 1;
 	MORT                        = 0;
 	ENERGIE                     = 4;
-	ENERGIE_MOUTON			    = 14;
-	AGE_MORT				    = 5;
-	ENERGIE_REPRODUCTION	    = 10;
+	ENERGIE_MOUTON			   = 14;
+	AGE_MORT				   = 5;
+	ENERGIE_REPRODUCTION	   = 10;
 	ENERGIE_REPRODUCTION_MOUTON = 20;
 	ENERGIE_INITIALE_MOUTON     = 11;
 	ENERGIE_INITIALE_LOUP       = 5;
@@ -83,71 +83,108 @@ TYPE importFile = Record
 	vecteur2      : tabPosition;
 END;
 
-FUNCTION handleArgs() : importFile;
+FUNCTION  handleArgs() : importFile;
 PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
 PROCEDURE logGrillePart2(gen : typeGeneration; ng : integer);
 PROCEDURE logGrillePart3(gen : typeGeneration2; ng : integer);
+PROCEDURE handleVectorInput(s : string; VAR tableau : tabPosition);
 
 IMPLEMENTATION
+
+FUNCTION isNumber(c : char) : boolean;
+BEGIN
+	isNumber := ((ord(c) > 47) and (ord(c) < 58));
+END;
 
 PROCEDURE handleVectorInput(s : string; VAR tableau : tabPosition);
 VAR
 	position : typePosition;
-	stringTmp : string;
-	i, counter : integer;
+	i, j, ii, numberCounter, numberBeginIndex, tabCounter : integer;
 BEGIN
-	counter := 0;
-	FOR i := 0 TO length(s) DO
+	i := 1;
+	tabCounter := 0;
+	WHILE i < length(s) DO
 	BEGIN
-		IF (s[i] = '(') THEN
+		position.x := -1;
+		position.y := -1;
+		IF isNumber(s[i]) THEN
 		BEGIN
-			stringTmp := copy(s, i, length(s));
-			position.x := strtoint(copy(stringTmp, 2, pos(' ', stringTmp) - 2));
-			position.y := strtoint(copy(stringTmp, pos(' ', stringTmp) + 1, pos(')', stringTmp) - pos(' ', stringTmp) - 1));
-			tableau[counter] := position;
-			inc(counter);
-		END;
+			numberCounter := 0;
+			numberBeginIndex := i;
+			j := i;
+			// on trouve les nombres (peuvent etre très grand...)
+			WHILE isNumber(s[j]) and (j < length(s)) DO
+			BEGIN
+				inc(numberCounter);
+				inc(j);
+			END;
+
+			position.x := strtoint(copy(s, numberBeginIndex, numberCounter));
+			writeln('posX : ', position.x);
+
+			WHILE (not isNumber(s[j])) and (s[j] <> ')') and (j < length(s)) DO
+			BEGIN
+				inc(j);
+			END;
+
+			numberBeginIndex := j;
+			numberCounter := 0;
+
+			WHILE isNumber(s[j]) and (j < length(s)) DO
+			BEGIN
+				inc(numberCounter);
+				inc(j);
+			END;
+
+			position.y := strtoint(copy(s, numberBeginIndex, numberCounter));
+			writeln('posY : ', position.y);
+			i := j;
+			tableau[tabCounter] := position;
+			inc(tabCounter);
+		END
+		ELSE
+			inc(i);
 	END;
 END;
 
 FUNCTION handleInportFile(fichier : string; inFile : importFile) : importFile;
 VAR
 	ligne : string;
-	fic   : text;	
+	fic   : text;
 	textPartie : boolean;
 BEGIN
 	// on traite le fichier
-	
+
 	assign(fic, fichier);
 	reset(fic);
-	if (IOResult <> 0) then 
+	if (IOResult <> 0) then
 		writeln('Le fichier n''existe pas')
 	else
 	textPartie := False;
 	BEGIN
 		REPEAT
 			readln(fic, ligne);
-			
+
 			IF ((pos('Vie', ligne) <> 0) and (inFile.partie = 1)) THEN
 			BEGIN
 				textPartie := True;
 			END;
-			
+
 			IF ((pos('Herbe', ligne) <> 0) and (inFile.partie = 2)) THEN
 			BEGIN
 				textPartie := True;
 			END;
-			
+
 			IF ((pos('Mouton', ligne) <> 0) and (inFile.partie = 3)) THEN
 			BEGIN
 				textPartie := True;
 			END;
-			
+
 			IF ((pos('Loup', ligne) <> 0) and (inFile.partie = 4)) THEN
 			BEGIN
 				textPartie := True;
 			END;
-			
+
 			IF (pos('Position', ligne) <> 0) THEN
 			BEGIN
 				IF (pos('PositionH', ligne) <> 0) then
@@ -169,21 +206,21 @@ BEGIN
 					END;
 				END;
 			END;
-					
+
 			IF (pos('Random', ligne) <> 0) then
 			BEGIN
 				inFile.typeRun := 'R';
 				inFile.randomPctg := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
 			END;
-			
+
 			IF (pos('NombreGeneration', ligne) <> 0) then
 			BEGIN
 				inFile.nbrGen := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
 			END;
-			
+
 		UNTIL eof(fic) or not textPartie;
 		close(fic);
-		
+
 		IF not textPartie THEN
 		BEGIN
 			writeln('Le fichier -i ne peut pas etre utilisé pour ce type de simulation. (ex: on ne fait pas de simulation de jeu de la vie avec des positions de moutons)');
@@ -288,12 +325,12 @@ BEGIN
 			inFile.partie := i;
 		END;
 	END;
-	
+
 	FOR i := 0 TO ParamCount DO
 	BEGIN
 		IF ((ParamStr(i) = '-i') and FileExists(ParamStr(i+1))) THEN
 			inFile := handleInportFile(ParamStr(i+1), inFile);
-		
+
 		IF (ParamStr(i) = '-o') THEN
 			IF FileExists(ParamStr(i+1)) THEN
 				outputFile := ParamStr(i+1)
