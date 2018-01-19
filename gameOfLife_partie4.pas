@@ -5,9 +5,11 @@ uses Crt, Process, sysutils;
 
 VAR
 	outPutFile : string;
+	logFile : string;
 
 CONST
-	M = 5;
+	N = 20;
+	M = N*N;
 
 TYPE typePosition = RECORD
 	x, y : INTEGER;
@@ -23,8 +25,12 @@ TYPE typeElement = RECORD
 	position : typePosition;
 END;
 
+TYPE typeHerbe = RECORD
+	age : INTEGER;
+	energie : INTEGER;
+END;
+
 CONST
-	N    				   = 20;
 	VIE                         = 1;
 	MORT                        = 0;
 	ENERGIE                     = 4;
@@ -47,8 +53,10 @@ CONST
 	ELEMENT_MOUTON              = 'MOUTON';
 	ELEMENT_LOUP                = 'LOUP';
 	ELEMENT_HERBE               = 'HERBE';
+	HERBE_MORTE                 : typeHerbe   = (age: -1; energie: 0);
+	NOUV_HERBE_P2               : typeHerbe   = (age: 0;  energie: 1);
 	NOUVEAU_MOUTON              : typeElement = (element: ELEMENT_MOUTON; age: 0; energie: ENERGIE_INITIALE_MOUTON; position: (x: -1; y: -1));
-	NOUVEAU_LOUP                : typeElement = (element: ELEMENT_LOUP; age: 0; energie: 5; position: (x: -1; y: -1));
+	NOUVEAU_LOUP                : typeElement = (element: ELEMENT_LOUP; age: 0; energie: ENERGIE_INITIALE_LOUP; position: (x: -1; y: -1));
 	NOUVEAU_HERBE               : typeElement = (element: ELEMENT_HERBE; age: 0; energie: ENERGIE_INITIALE_HERBE; position: (x: -1; y: -1));
 
 // Type general utilisé pour logger les grilles
@@ -60,11 +68,6 @@ TYPE typeGrille  = array [0..N - 1, 0..N - 1] of INTEGER;
 // Grille pour la partie 3
 TYPE typeGrilleString  = array [0..N - 1, 0..N - 1] of String;
 
-TYPE typeHerbe = RECORD
-	age : INTEGER;
-	energie : INTEGER;
-END;
-
 TYPE typeGeneration = array [0..N - 1, 0..N - 1] of typeHerbe;
 
 TYPE typeGeneration2 = RECORD
@@ -74,44 +77,60 @@ TYPE typeGeneration2 = RECORD
 	grille               : typeGrilleString;
 END;
 
+// type perso explique dans le latex
 TYPE importFile = Record
 	partie        : INTEGER;
 	nbrGen        : INTEGER;
 	typeRun       : STRING;
-	randomPctg    : INTEGER;
+	random1       : INTEGER;
+	random2       : INTEGER;
+	random3       : INTEGER;
+	delay         : INTEGER;
+	nbrPos1       : INTEGER;
+	nbrPos2       : INTEGER;
+	nbrPos3       : INTEGER;
 	vecteur1      : tabPosition;
 	vecteur2      : tabPosition;
+	vecteur3      : tabPosition;
 END;
+
+type longString = array [0..10000] of char;
 
 FUNCTION  handleArgs() : importFile;
 PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
 PROCEDURE logGrillePart2(gen : typeGeneration; ng : integer);
 PROCEDURE logGrillePart3(gen : typeGeneration2; ng : integer);
-PROCEDURE handleVectorInput(s : string; VAR tableau : tabPosition);
 
 IMPLEMENTATION
 
+// verifie si un char est un nombre ou non.
 FUNCTION isNumber(c : char) : boolean;
 BEGIN
 	isNumber := ((ord(c) > 47) and (ord(c) < 58));
 END;
 
-PROCEDURE handleVectorInput(s : string; VAR tableau : tabPosition);
+// permet de convertir une série de position dans un fichier text en position
+// utilisable par les programmes
+PROCEDURE handleVectorInput(s : longstring; VAR tableau : tabPosition; VAR tabCounter : integer);
 VAR
 	position : typePosition;
-	i, j, ii, numberCounter, numberBeginIndex, tabCounter : integer;
+	i, j, numberCounter, numberBeginIndex : integer;
+	stop : boolean;
 BEGIN
-	i := 1;
+	i := 0;
 	tabCounter := 0;
-	WHILE i < length(s) DO
+	stop := False;
+	WHILE (i < length(s) - 1) and (not stop) DO
 	BEGIN
+		if s[i + 1] = ']' THEN
+			stop := True;
 		position.x := -1;
 		position.y := -1;
 		IF isNumber(s[i]) THEN
 		BEGIN
-			numberCounter := 0;
+			numberCounter := 1;
 			numberBeginIndex := i;
-			j := i;
+			j := i + 1;
 			// on trouve les nombres (peuvent etre très grand...)
 			WHILE isNumber(s[j]) and (j < length(s)) DO
 			BEGIN
@@ -119,7 +138,7 @@ BEGIN
 				inc(j);
 			END;
 
-			position.x := strtoint(copy(s, numberBeginIndex, numberCounter));
+			position.x := strtoint(copy(s, numberBeginIndex + 1, numberCounter));
 			writeln('posX : ', position.x);
 
 			WHILE (not isNumber(s[j])) and (s[j] <> ')') and (j < length(s)) DO
@@ -136,8 +155,9 @@ BEGIN
 				inc(j);
 			END;
 
-			position.y := strtoint(copy(s, numberBeginIndex, numberCounter));
-			writeln('posY : ', position.y);
+			position.y := strtoint(copy(s, numberBeginIndex + 1, numberCounter));
+			writeln('posY : ', position.y, ', n : ', tabCounter);
+
 			i := j;
 			tableau[tabCounter] := position;
 			inc(tabCounter);
@@ -145,16 +165,25 @@ BEGIN
 		ELSE
 			inc(i);
 	END;
+	FOR i := tabCounter to M - 1 DO
+	BEGIN
+		position.x := -1;
+		position.y := -1;
+		tableau[i] := position;
+	END;
 END;
 
+// lit les fichiers passé en -i et les interprete.
 FUNCTION handleInportFile(fichier : string; inFile : importFile) : importFile;
 VAR
-	ligne : string;
+	//ligne : string;
+	ligne : longString;
 	fic   : text;
-	textPartie : boolean;
+	i : integer;
+	textPartie, delayHasChange : boolean;
 BEGIN
+	delayHasChange := False;
 	// on traite le fichier
-
 	assign(fic, fichier);
 	reset(fic);
 	if (IOResult <> 0) then
@@ -164,6 +193,7 @@ BEGIN
 	BEGIN
 		REPEAT
 			readln(fic, ligne);
+			writeln(length(ligne));
 
 			IF ((pos('Vie', ligne) <> 0) and (inFile.partie = 1)) THEN
 			BEGIN
@@ -180,7 +210,7 @@ BEGIN
 				textPartie := True;
 			END;
 
-			IF ((pos('Loup', ligne) <> 0) and (inFile.partie = 4)) THEN
+			IF ((pos('Loup', ligne) <> 0) and (inFile.partie = 5)) THEN
 			BEGIN
 				textPartie := True;
 			END;
@@ -190,27 +220,65 @@ BEGIN
 				IF (pos('PositionH', ligne) <> 0) then
 				BEGIN
 					inFile.typeRun := 'V';
-					handleVectorInput(ligne, inFile.vecteur2);
+					handleVectorInput(ligne, inFile.vecteur2, inFile.nbrPos1);
 				END
 				ELSE
 				BEGIN
 					IF (pos('PositionM', ligne) <> 0) then
 					BEGIN
 						inFile.typeRun := 'V';
-						handleVectorInput(ligne, inFile.vecteur1);
+						handleVectorInput(ligne, inFile.vecteur1, inFile.nbrPos2);
 					END
 					ELSE
 					BEGIN
-						inFile.typeRun := 'V';
-						handleVectorInput(ligne, inFile.vecteur1);
+						IF (pos('PositionL', ligne) <> 0) then
+						BEGIN
+							inFile.typeRun := 'V';
+							handleVectorInput(ligne, inFile.vecteur3,inFile.nbrPos3);
+						END
+						ELSE
+						BEGIN
+							inFile.typeRun := 'V';
+							handleVectorInput(ligne, inFile.vecteur1, inFile.nbrPos1);
+						END;
 					END;
 				END;
 			END;
 
-			IF (pos('Random', ligne) <> 0) then
+			IF (pos('Random', ligne) <> 0) THEN
 			BEGIN
-				inFile.typeRun := 'R';
-				inFile.randomPctg := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
+				IF (pos('RandomH', ligne) <> 0) then
+				BEGIN
+					inFile.typeRun := 'R';
+					inFile.random1 := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
+				END
+				ELSE
+				BEGIN
+					IF (pos('RandomM', ligne) <> 0) then
+					BEGIN
+						inFile.typeRun := 'R';
+						inFile.random2 := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
+					END
+					ELSE
+					BEGIN
+						IF (pos('RandomL', ligne) <> 0) then
+						BEGIN
+							inFile.typeRun := 'R';
+							inFile.random3 := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
+						END
+						ELSE
+						BEGIN
+							inFile.typeRun := 'R';
+							inFile.random1 := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
+						END;
+					END;
+				END;
+			END;
+
+			IF (pos('Delay', ligne) <> 0) then
+			BEGIN
+				inFile.delay := strtoint(copy(ligne, pos('=', ligne) + 1, length(ligne)));
+				delayHasChange := True;
 			END;
 
 			IF (pos('NombreGeneration', ligne) <> 0) then
@@ -220,6 +288,9 @@ BEGIN
 
 		UNTIL eof(fic) or not textPartie;
 		close(fic);
+
+		if not delayHasChange THEN
+			inFile.delay := 500;
 
 		IF not textPartie THEN
 		BEGIN
@@ -231,6 +302,8 @@ BEGIN
 	END;
 END;
 
+// Permet d'enregistrer chaque simulation (grille) dans un
+// fichier
 PROCEDURE logGrilleToFile(logGrille : tabPrint; ng : integer);
 VAR
 	i, j : integer;
@@ -251,21 +324,65 @@ BEGIN
 	close(fichier);
 END;
 
+// permet de creer un fichier CSV contenant le nombre d'element dans chaque simulations
+// pour faire des belles courbes
+PROCEDURE logValueToFile(logGrille : tabPrint; ng : integer);
+VAR
+	i, j, nbrHerbe, nbrMouton, nbrLoup : integer;
+	fichier : text;
+BEGIN
+	writeln('je suis la');
+	assign(fichier, logFile);
+	append(fichier);
+	nbrHerbe := 0;
+	nbrMouton := 0;
+	nbrLoup := 0;
+
+	if (ng = 0) THEN
+		writeln(fichier,'nbrGen, herbe, mouton, loup');
+
+	FOR i := 0 TO N - 1 DO
+	BEGIN
+		FOR j := 0 TO N - 1 DO
+		BEGIN
+			IF (pos('h', logGrille[i, j]) <> 0) or (pos('#', logGrille[i,j]) <> 0) THEN
+				inc(nbrHerbe);
+			IF (pos('m', logGrille[i, j]) <> 0) THEN
+				inc(nbrMouton);
+			IF (pos('l', logGrille[i, j]) <> 0) THEN
+				inc(nbrLoup);
+		END;
+	END;
+	writeln(fichier, ng, ',', nbrHerbe, ',', nbrMouton, ',', nbrLoup);
+	close(fichier);
+END;
+
+{
+	logGrillePartX sont des procedure pour convertir une grille (de chaque partie)
+	en grille général. Ce sont un peu les drivers de la partie 4.
+}
+
 PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
 VAR
 	i, j : integer;
 	logGrille : tabPrint;
 BEGIN
-	IF outPutFile <> '' THEN
+	IF (outPutFile <> '') or (logFile <> '') THEN
 	BEGIN
 		FOR i := 0 TO N - 1 DO
 		BEGIN
 			FOR j := 0 TO N - 1 DO
 			BEGIN
-				logGrille[i, j] := inttostr(grille[i, j]);
+				IF grille[i, j] = 1 THEN
+					logGrille[i, j] := ' #'
+				ELSE
+					logGrille[i, j] := ' .';
 			END;
 		END;
-		logGrilleToFile(logGrille, ng);
+		IF outPutFile <> '' THEN
+			logGrilleToFile(logGrille, ng);
+		IF logFile <> '' THEN
+			logValueToFile(logGrille, ng);
 	END;
 END;
 
@@ -274,20 +391,23 @@ VAR
 	i, j : integer;
 	logGrille : tabPrint;
 BEGIN
-	writeln(outputfile);
-	IF outPutFile <> '' THEN
+	IF (outPutFile <> '') or (logFile <> '') THEN
 	BEGIN
+		writeln(outputfile);
 		FOR i := 0 TO N - 1 DO
 		BEGIN
 			FOR j := 0 TO N - 1 DO
 			BEGIN
 				IF(gen[i,j].age >= 0) THEN
-					logGrille[i,j] := ' ' + inttostr(gen[i,j].age)
+					logGrille[i,j] := ' #'
 				ELSE
 					logGrille[i,j] := ' .';
 			END;
 		END;
-		logGrilleToFile(logGrille, ng);
+		IF outPutFile <> '' THEN
+			logGrilleToFile(logGrille, ng);
+		IF logFile <> '' THEN
+			logValueToFile(logGrille, ng);
 	END;
 END;
 
@@ -297,7 +417,7 @@ VAR
 	logGrille : tabPrint;
 BEGIN
 	writeln(outputfile);
-	IF outPutFile <> '' THEN
+	IF (outPutFile <> '') or (logFile <> '') THEN
 	BEGIN
 		FOR i := 0 TO N - 1 DO
 		BEGIN
@@ -306,19 +426,28 @@ BEGIN
 				logGrille[i,j] := gen.grille[i, j];
 			END;
 		END;
-		logGrilleToFile(logGrille, ng);
+		if outPutFile <> '' THEN
+			logGrilleToFile(logGrille, ng);
+		if logFile <> '' THEN
+			logValueToFile(logGrille, ng);
 	END;
 END;
 
+
+// fonction principale du paquet. Prend les args** en entrée en les execute.
 FUNCTION handleArgs() : importFile;
 VAR
 	 i : INTEGER;
 	 command : string;
 	 foo : ansiString;
 	 inFile : importFile;
+	 genToRun : boolean;
 	 // variable globale
 BEGIN
-	FOR i := 1 TO 4 DO
+
+	genToRun := False;
+
+	FOR i := 1 TO 5 DO
 	BEGIN
 		IF pos('partie' + inttostr(i), ParamStr(0)) <> 0 THEN
 		BEGIN
@@ -328,20 +457,62 @@ BEGIN
 
 	FOR i := 0 TO ParamCount DO
 	BEGIN
+		IF (ParamStr(i) = '-h') THEN
+		BEGIN
+			writeln('Projet Informatique - Paul Planchon et Cyril Marzook');
+			writeln('HELP : -i permet d''entrer un fichier génération.');
+			writeln('       -o permet d''enregistrer les simulations.');
+			writeln('       -l permet des valeur numériques sur les simulations.');
+			writeln('       -h affiche cette commande.');
+			halt(1);
+		END;
+
 		IF ((ParamStr(i) = '-i') and FileExists(ParamStr(i+1))) THEN
+		BEGIN
 			inFile := handleInportFile(ParamStr(i+1), inFile);
+			genToRun := True;
+		END;
 
 		IF (ParamStr(i) = '-o') THEN
+		BEGIN
 			IF FileExists(ParamStr(i+1)) THEN
-				outputFile := ParamStr(i+1)
+			BEGIN
+				outputFile := ParamStr(i+1);
+				genToRun := True;
+			END
 			ELSE
 			BEGIN
 				// si le fichier n'existe pas (possible) on le créé
 				command := 'touch ' + ParamStr(i+1);
 				RunCommand(command, foo);
-				outputFile := ParamStr(i+1)
+				outputFile := ParamStr(i+1);
+				genToRun := True;
 			END;
+		END;
+
+		IF (ParamStr(i) = '-l') THEN
+		BEGIN
+			IF FileExists(ParamStr(i+1)) THEN
+			BEGIN
+				logFile := ParamStr(i+1);
+			END
+			ELSE
+			BEGIN
+				// si le fichier n'existe pas (possible) on le créé
+				command := 'touch ' + ParamStr(i+1);
+				RunCommand(command, foo);
+				logFile := ParamStr(i+1);
+			END;
+		END;
 	END;
-	handleArgs := inFile;
+
+	IF (genToRun) THEN
+		handleArgs := inFile
+	ELSE
+	BEGIN
+		writeln('Pas de simulation a lancer.');
+		halt(1);
+	END;
 END;
+
 END.

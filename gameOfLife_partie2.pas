@@ -14,7 +14,7 @@ BEGIN
 		FOR j := 0 TO N - 1 DO
 		BEGIN
 			IF(generation[i,j].age >= 0) THEN
-				write(' ', generation[i,j].age)
+				write(' #')
 			ELSE
 				write(' ·');
 		END;
@@ -25,15 +25,12 @@ END;
 PROCEDURE setToZero(VAR grille : typeGeneration);
 VAR
 	i, j : INTEGER;
-	morte : typeHerbe;
 BEGIN
-	morte.age := -1;
-	morte.energie := 0;
 	FOR i := 0 TO N - 1 DO
 	BEGIN
 		FOR j := 0 TO N - 1 DO
 		BEGIN
-			grille[i, j] := morte;
+			grille[i, j] := HERBE_MORTE;
 		END;
 	END;
 END;
@@ -42,30 +39,22 @@ FUNCTION initialiserGeneration(listePosition : tabPosition) : typeGeneration;
 VAR
 		prairie : typeGeneration;
 		i     : INTEGER;
-		herbe : typeHerbe;
 BEGIN
-	herbe.age := 0;
-	herbe.energie := 1;
-
 	setToZero(prairie);
 
 	FOR i := 0 TO M - 1 DO
 	BEGIN
+		writeln('je suis la', i, M);
 		IF (listePosition[i].x > 0) and (listePosition[i].y > 0) THEN
-			prairie[listePosition[i].x, listePosition[i].y] := herbe;
+			prairie[listePosition[i].x, listePosition[i].y] := NOUV_HERBE_P2;
 	END;
-
-
 	initialiserGeneration := prairie;
 END;
 
 FUNCTION reproduire(prairie : typeGeneration; x, y : integer) : typeGeneration;
 VAR
-	herbe : typeHerbe;
 	i, j, k, l : integer;
 BEGIN
-	herbe.age := 0;
-	herbe.energie := 1;
 	FOR i := -1 TO 1 DO
 	BEGIN
 		FOR j := -1 TO 1 DO
@@ -80,7 +69,7 @@ BEGIN
 				l := N - 1;
 
 			IF (prairie[k, l].age < 0) then
-				prairie[k, l] := herbe;
+				prairie[k, l] := NOUV_HERBE_P2;
 		END;
 	END;
 	reproduire := prairie;
@@ -104,8 +93,7 @@ BEGIN
 
 				IF (nouvellePrairie[i, j].age >= AGE_MORT) THEN
 				BEGIN
-					nouvellePrairie[i, j].age := -1;
-					nouvellePrairie[i, j].energie := 0;
+					nouvellePrairie[i, j] := HERBE_MORTE;
 				END
 				ELSE
 				BEGIN
@@ -134,21 +122,24 @@ BEGIN
 	compteCellule := result;
 END;
 
-FUNCTION run(prairie : typeGeneration; n : INTEGER) : typeGeneration;
+FUNCTION run(prairie : typeGeneration; n, delayValue : INTEGER) : typeGeneration;
 VAR
 	tmp : integer;
 BEGIN
 	tmp := 0;
 	REPEAT
 		prairie := calculerNouvelleGeneration(prairie);
-		if (n > 0) then
-			inc(tmp);
 		ClrScr;
-		writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
+		writeln('GRILLE GENERATION : ', tmp, ' / ', n);
 		afficherGeneration(prairie);
-		Delay(1500);
-		inc(nombreGeneration);
+		Delay(delayValue);
+		if (n > 0) then
+		BEGIN
+			inc(tmp);
+			inc(nombreGeneration);
+		END;
 	UNTIL ((compteCellule(prairie) = 0) or ((tmp > n) and (n > 0)));
+
 	run := prairie;
 END;
 
@@ -156,10 +147,7 @@ FUNCTION initPrairie(pourcentage : INTEGER) : typeGeneration;
 VAR
 	x, y, nbrDeCellules : INTEGER;
 	prairie : typeGeneration;
-	herbe : typeHerbe;
 BEGIN
-	herbe.age := 0;
-	herbe.energie := 1;
 	setToZero(prairie);
 	nbrDeCellules := round((pourcentage / 100) * (N * N));
 	WHILE nbrDeCellules > 0 DO
@@ -171,7 +159,7 @@ BEGIN
 			x := random(N);
 			y := random(N);
 		END;
-		prairie[x, y] := herbe;
+		prairie[x, y] := NOUV_HERBE_P2;
 		dec(nbrDeCellules);
 	END;
 	initPrairie := prairie;
@@ -207,14 +195,15 @@ BEGIN
 	END;
 	initPrairieByHand := initialiserGeneration(tableau);
 END;
+
 VAR
 	prairie : typeGeneration;
-	test    : importFile;
+	args    : importFile;
 BEGIN
-	test := handleArgs();
-	IF (test.typeRun = 'R') then
-		prairie := initPrairie(test.randomPctg)
+	args := handleArgs();
+	IF (args.typeRun = 'R') then
+		prairie := initPrairie(args.random1)
 	else
-		prairie := initialiserGeneration(test.vecteur1);
-	run(prairie, test.nbrGen);
+		prairie := initialiserGeneration(args.vecteur1);
+	run(prairie, args.nbrGen, args.delay);
 END.

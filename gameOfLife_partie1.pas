@@ -1,3 +1,10 @@
+{
+	PROJET INFORMATIQUE 2018 - Partie I
+	Le jeu de la vie de John Conway
+	Paul Planchon et Cyril Marzook
+
+}
+
 PROGRAM gameOfLife;
 USES gameOfLife_partie4, Crt;
 
@@ -8,6 +15,7 @@ PROCEDURE afficherGrille(grille :  typeGrille);
 VAR
 	i, j : INTEGER;
 BEGIN
+	// enregsitre si necessaire la grille. (si "-o")
 	logGrillePart1(grille, nombreGeneration);
 	FOR i := 0 TO N - 1 DO
 	BEGIN
@@ -20,20 +28,6 @@ BEGIN
 		END;
 		writeln();
 	END;
-END;
-
-// compte le nombre d'occurence d'un char c dans une string s.
-FUNCTION nombreOccurence(s : string; c : char) : INTEGER;
-VAR
-	i, res : integer;
-BEGIN
-	res := 0;
-	FOR i := 1 TO length(s) DO
-	BEGIN
-		IF (s[i] = c) then
-			inc(res);
-	END;
-	nombreOccurence := res;
 END;
 
 //on met la grille a zero
@@ -51,16 +45,19 @@ BEGIN
 END;
 
 //on remplit la grille en fonction du tableau
-FUNCTION remplirGrille(tableau : tabPosition) : typeGrille;
+FUNCTION remplirGrille(tableau : tabPosition; tailleTableau : integer) : typeGrille;
 VAR
 		grille : typeGrille;
 		i 	   : INTEGER;
 BEGIN
 	setToZero(grille);
-	FOR i := 0 TO M DO
+
+	FOR i := 0 TO tailleTableau - 1 DO
 	BEGIN
 		IF ((tableau[i].x >= 0) and (tableau[i].x < N)) and ((tableau[i].y >= 0) and (tableau[i].y < N)) then
-			grille[tableau[i].x, tableau[i].y] := VIE
+		BEGIN
+			grille[tableau[i].y, tableau[i].x] := VIE;
+		END;
 	END;
 	remplirGrille := grille;
 END;
@@ -85,7 +82,7 @@ BEGIN
 				result := result + 1;
 		END;
 	END;
-	
+
 	// la cellule elle-même n'est pas comptée comme voisin.
 	if(grille[x, y] = VIE) then
 		result := result - 1;
@@ -119,12 +116,11 @@ BEGIN
 					nouvelleGrille[x,y]:= VIE;
 				END
 				ELSE
-				BEGIN
 					nouvelleGrille[x,y]:= MORT;
-				END;
 			END;
 		END;
 	END;
+
 	calculerNouvelleGrille := nouvelleGrille;
 END;
 
@@ -135,7 +131,14 @@ VAR
 	grille : typeGrille;
 BEGIN
 	setToZero(grille);
-	nbrDeCellules := round((pourcentage / 100) * (N * N));
+	IF pourcentage <= 100 THEN
+		nbrDeCellules := round((pourcentage / 100) * (N * N))
+	ELSE
+		nbrDeCellules := N * N;
+
+	IF pourcentage < 0 THEN
+		nbrDeCellules := 0;
+
 	WHILE nbrDeCellules > 0 DO
 	BEGIN
 		x := random(N);
@@ -148,9 +151,11 @@ BEGIN
 		grille[x, y] := VIE;
 		dec(nbrDeCellules);
 	END;
+
 	initGrille := grille;
 END;
 
+// compte le nombre de cellules vivantes dans la grille
 FUNCTION compteCellule(grille : typeGrille) : INTEGER;
 VAR
 	i, result : INTEGER;
@@ -158,31 +163,34 @@ BEGIN
 	result := 0;
 	FOR i := 0 TO N * N - 1 DO
 	BEGIN
+		// i MOD N et i DIV N <==> faire deux boucle sur i et j
 		IF (grille[i MOD N, i DIV N] = VIE) THEN
 			result := result + 1
 	END;
 	compteCellule := result;
 END;
 
-FUNCTION run(grilleInitiale : typeGrille; n : INTEGER) : typeGrille;
+FUNCTION run(grilleInitiale : typeGrille; n, delayValue : INTEGER) : typeGrille;
 VAR
 	tmp : integer;
 BEGIN
 	tmp := 0;
+	afficherGrille(grilleInitiale);
 	REPEAT
 		grilleInitiale := calculerNouvelleGrille(grilleInitiale);
-		if (n > 0) then
-			inc(tmp);
-		
 		ClrScr;
-		
-		writeln('GRILLE GENERATION : ', tmp - 1, ' / ', n);
+		writeln('GRILLE GENERATION : ', tmp, ' / ', n);
 		afficherGrille(grilleInitiale);
-		Delay(500);
-		
-		inc(nombreGeneration);
+		Delay(delayValue);
+
+		// si le nombre de gen est < 0, on genere à l'inf.
+		if (n > 0) then
+		BEGIN
+			inc(tmp);
+			inc(nombreGeneration);
+		END;
 	UNTIL ((compteCellule(grilleInitiale) = 0) or ((tmp > n) and (n > 0)));
-	
+
 	run := grilleInitiale;
 END;
 
@@ -231,29 +239,30 @@ BEGIN
 		position.y := posY;
 		tableau[i] := position;
 	END;
+
 	position.x := -1;
 	position.y := -1;
 	FOR i := nbrPosition + 1 TO M DO
 	BEGIN
 		tableau[i] := position;
 	END;
+
 	ClrScr;
+
 	genererTableau := tableau;
 END;
 
 PROCEDURE menu;
 VAR
-	choix, p , g, nbrPosition, i : integer;
-	posX, posY : integer;
+	choix, p , g : integer;
 	grille   : typeGrille;
-	position : typePosition;
-	tableau  : tabPosition;
 BEGIN
 	REPEAT
 		writeln(' --> 1   : Choisir le pourcentage de cellules vivantes');
 		writeln(' --> 2   : Entrer les positions sois même');
 		writeln(' --> 3   : Entrer les positions par une string');
 		writeln(' --> 12  : Quitter');
+
 		readln(choix);
 		IF  (choix = 1) or (choix = 2) THEN
 		BEGIN
@@ -268,19 +277,18 @@ BEGIN
 				ClrScr;
 				writeln('Grille de départ :');
 				afficherGrille(grille);
-				run(grille , g);
+				run(grille , g, 500);
 			END;
 			IF (choix = 2) THEN
 			BEGIN
-				grille := remplirGrille(genererTableau());
+				grille := remplirGrille(genererTableau(), M);
 				writeln('Maintenant, combien de générations souhaitez vous générer?');
 				readln(g);
 				ClrScr;
 				writeln('Grille de départ :');
 				afficherGrille(grille);
-				run(grille , g);
+				run(grille , g, 500);
 			END;
-
 		END;
 	UNTIL (choix = 12);
 	ClrScr;
@@ -299,9 +307,9 @@ BEGIN
 
 	args := handleArgs();
 	IF (args.typeRun = 'R') then
-		grille := initGrille(args.randomPctg)
+		grille := initGrille(args.random1)
 	else
-		grille := remplirGrille(args.vecteur1);
-		
-	run(grille, args.nbrGen);
+		grille := remplirGrille(args.vecteur1, args.nbrPos1);
+
+	run(grille, args.nbrGen, args.delay);
 END.

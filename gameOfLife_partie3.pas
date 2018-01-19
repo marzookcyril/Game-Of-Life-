@@ -55,6 +55,7 @@ BEGIN
 	END;
 END;
 
+// initie la generation avec deux vecteur de moutons et herbes
 FUNCTION initGeneration2(vecteurPositionsMoutons, vecteurPositionsHerbes : tabPosition) : typeGeneration2;
 VAR
 	gen    : typeGeneration2;
@@ -62,22 +63,17 @@ VAR
 	i, counterElement      : integer;
 	herbe, mouton : typeElement;
 BEGIN
-	herbe.element  := ELEMENT_HERBE;
-	herbe.energie  := ENERGIE_INITIALE_HERBE;
-	herbe.age      := 0;
-	mouton.element := ELEMENT_MOUTON;
-	mouton.energie := ENERGIE_INITIALE_MOUTON;
-	mouton.age     := 0;
-
 	counterElement := 0;
-	gen.tailleVecteurObjects := length(vecteurPositionsHerbes) + length(vecteurPositionsMoutons);
+	gen.tailleVecteurObjects := length(vecteurPositionsHerbes) + length(vecteurPositionsMoutons) + 1;
 	setLength(gen.vecteurObjects, gen.tailleVecteurObjects);
+
 	setToZero(grille);
 
-	FOR i := 0 TO M DO
+	FOR i := 0 TO M - 1 DO
 	BEGIN
-		IF((vecteurPositionsHerbes[i].x > 0) and (vecteurPositionsHerbes[i].y > 0)) THEN
+		IF((vecteurPositionsHerbes[i].x >= 0) and (vecteurPositionsHerbes[i].y >= 0)) THEN
 		BEGIN
+			herbe := NOUVEAU_HERBE;
 			grille[vecteurPositionsHerbes[i].x, vecteurPositionsHerbes[i].y] := UNE_HERBE;
 			herbe.position.x := vecteurPositionsHerbes[i].x;
 			herbe.position.y := vecteurPositionsHerbes[i].y;
@@ -85,12 +81,13 @@ BEGIN
 			inc(counterElement);
 		END;
 	END;
+	writeln('je suis la');
 
-	writeln('DEBUG');
-	FOR i := 0 TO M DO
+	FOR i := 0 TO M - 1 DO
 	BEGIN
-		IF((vecteurPositionsMoutons[i].x > 0) and (vecteurPositionsMoutons[i].y > 0)) THEN
+		IF((vecteurPositionsMoutons[i].x >= 0) and (vecteurPositionsMoutons[i].y >= 0)) THEN
 		BEGIN
+			mouton := NOUVEAU_MOUTON;
 			mouton.position.x := vecteurPositionsMoutons[i].x;
 			mouton.position.y := vecteurPositionsMoutons[i].y;
 			gen.vecteurObjects[counterElement] := mouton;
@@ -103,10 +100,8 @@ BEGIN
 	END;
 
 	// si jamais des positions étaient incorectes, on ne veut pas d'array trop grand.
-	writeln(counterElement);
 	gen.tailleVecteurObjects := counterElement;
 	setLength(gen.vecteurObjects, counterElement);
-	writeln(length(gen.vecteurObjects));
 	gen.grille := grille;
 	initGeneration2 := gen;
 END;
@@ -395,7 +390,7 @@ BEGIN
 	grilleNonVide := result;
 END;
 
-PROCEDURE runGeneration2(gen : typeGeneration2; nombreGen : INTEGER);
+PROCEDURE runGeneration2(gen : typeGeneration2; nombreGen, delayValue : INTEGER);
 VAR
 	i : integer;
 BEGIN
@@ -409,18 +404,68 @@ BEGIN
 		afficherGrille(gen);
 		IF (nombreGen > 0) THEN
 			inc(i);
-		Delay(500);
-		inc(nombreGeneration); 
+		Delay(delayValue);
+		inc(nombreGeneration);
 	END;
+END;
+
+// regarde si une pos est dans le tableau
+FUNCTION isInTab(tab : tabPosition; x, y : integer) : boolean;
+VAR
+	i : integer;
+	result : boolean;
+BEGIN
+	result := False;
+	FOR i := 0 TO M - 1 DO
+	BEGIN
+		IF (tab[i].x = x) and (tab[i].y = y) THEN
+			result := True;
+	END;
+	isInTab := result;
+END;
+
+FUNCTION initRandom(pourcentage : INTEGER) : tabPosition;
+VAR
+	nbrDeCellules, i : INTEGER;
+	tab : tabPosition;
+	position : typePosition;
+BEGIN
+	i := 0;
+	nbrDeCellules := round((pourcentage / 100) * ((N) * (N)));
+	WHILE (nbrDeCellules > 0) and (i < M) DO
+	BEGIN
+		position.x := Random(N) - 1;
+		position.y := Random(N) - 1;
+		WHILE isInTab(tab, position.x, position.y) DO
+		BEGIN
+			position.x := Random(N);
+			position.y := Random(N);
+		END;
+		writeln(i, ',', position.x, ',', position.y);
+		tab[i] := position;
+		inc(i);
+		dec(nbrDeCellules);
+	END;
+	FOR i := i TO M - 1 DO
+	BEGIN
+		position.x := -1;
+		position.y := -1;
+		tab[i] := position;
+	END;
+	initRandom := tab;
 END;
 
 VAR
 	gen :  typeGeneration2;
-	test : importFile;
+	args : importFile;
 	i : integer;
 BEGIN
-	test := handleArgs();
-	gen := initGeneration2(test.vecteur1, test.vecteur2);
-	writeln('nbrGen :', test.nbrGen);
-	runGeneration2(gen, test.nbrGen);
+	args := handleArgs();
+	IF args.typeRun = 'V' THEN
+		gen := initGeneration2(args.vecteur2, args.vecteur1);
+	IF args.typeRun = 'R' THEN
+		gen := initGeneration2(initRandom(args.random2), initRandom(args.random1));
+	writeln('nbrGen :', args.nbrGen, args.random2, args.random1);
+	afficherGrille(gen);
+	runGeneration2(gen, args.nbrGen, args.delay);
 END.

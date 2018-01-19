@@ -66,10 +66,10 @@ BEGIN
 
 	counterElement := 0;
 	gen.tailleVecteurObjects := length(vecteurPositionsHerbes) + length(vecteurPositionsMoutons) + length(vecteurPositionsLoups);
-	setLength(gen.vecteurObjects, gen.tailleVecteurObjects);
+	setLength(gen.vecteurObjects, gen.tailleVecteurObjects + 1);
 	setToZero(grille);
 
-	FOR i := 0 TO M DO
+	FOR i := 0 TO M - 1 DO
 	BEGIN
 		IF((vecteurPositionsHerbes[i].x > 0) and (vecteurPositionsHerbes[i].y > 0)) THEN
 		BEGIN
@@ -81,7 +81,7 @@ BEGIN
 		END;
 	END;
 
-	FOR i := 0 TO M DO
+	FOR i := 0 TO M - 1 DO
 	BEGIN
 		IF((vecteurPositionsMoutons[i].x > 0) and (vecteurPositionsMoutons[i].y > 0)) THEN
 		BEGIN
@@ -96,7 +96,7 @@ BEGIN
 		END;
 	END;
 
-	FOR i := 0 TO M DO
+	FOR i := 0 TO M - 1 DO
 	BEGIN
 		IF((vecteurPositionsLoups[i].x > 0) and (vecteurPositionsLoups[i].y > 0)) THEN
 		BEGIN
@@ -116,10 +116,8 @@ BEGIN
 	END;
 
 	// si jamais des positions étaient incorectes, on ne veut pas d'array trop grand.
-	writeln(counterElement);
 	gen.tailleVecteurObjects := counterElement;
 	setLength(gen.vecteurObjects, counterElement);
-	writeln(length(gen.vecteurObjects));
 	gen.grille := grille;
 	initGeneration2 := gen;
 END;
@@ -162,9 +160,6 @@ PROCEDURE addElementToSimulation(element : typeElement; VAR gen : typeGeneration
 BEGIN
 	// on ajoute un element à la simulation ssi cet element n'existe pas deja
 	// dans la simulation.
-
-	// TODO :
-	// rendre cette méthode plus elegente avec une boucle
 
 	setLength(gen.vecteurObjects, gen.tailleVecteurObjects + 1);
 
@@ -587,13 +582,12 @@ BEGIN
 	grilleNonVide := result;
 END;
 
-PROCEDURE runGeneration2(gen : typeGeneration2; nombreGen : INTEGER);
+PROCEDURE runGeneration2(gen : typeGeneration2; nombreGen, delayValue : INTEGER);
 VAR
 	i : integer;
 BEGIN
 	i := 0;
 	afficherGrille(gen);
-	Delay(2000);
 	WHILE (i < nombreGen) and (gen.tailleVecteurObjects > 1) DO
 	BEGIN
 		ClrScr;
@@ -603,19 +597,67 @@ BEGIN
 		afficherGrille(gen);
 		IF (nombreGen > 0) THEN
 			inc(i);
-		Delay(2000);
-		inc(nombreGeneration);	
+		Delay(delayValue);
+		inc(nombreGeneration);
 	END;
 END;
+
+// regarde si une pos est dans le tableau
+FUNCTION isInTab(tab : tabPosition; x, y : integer) : boolean;
+VAR
+	i : integer;
+	result : boolean;
+BEGIN
+	result := False;
+	FOR i := 0 TO M - 1 DO
+	BEGIN
+		IF (tab[i].x = x) and (tab[i].y = y) THEN
+			result := True;
+	END;
+	isInTab := result;
+END;
+
+FUNCTION initRandom(pourcentage : INTEGER) : tabPosition;
+VAR
+	nbrDeCellules, i : INTEGER;
+	tab : tabPosition;
+	position : typePosition;
+BEGIN
+	i := 0;
+	nbrDeCellules := round((pourcentage / 100) * ((N) * (N)));
+	WHILE (nbrDeCellules > 0) and (i < M) DO
+	BEGIN
+		position.x := Random(N) - 1;
+		position.y := Random(N) - 1;
+		WHILE isInTab(tab, position.x, position.y) DO
+		BEGIN
+			position.x := Random(N);
+			position.y := Random(N);
+		END;
+		writeln(i, ',', position.x, ',', position.y);
+		tab[i] := position;
+		inc(i);
+		dec(nbrDeCellules);
+	END;
+	FOR i := i TO M - 1 DO
+	BEGIN
+		position.x := -1;
+		position.y := -1;
+		tab[i] := position;
+	END;
+	initRandom := tab;
+END;
+
 
 VAR
 	tabMouton, tabHerbe, tabLoup : tabPosition;
 	gen :  typeGeneration2;
+	args : importFile;
 BEGIN
-	handleArgs();
-	tabMouton := initPrairieByHand('mouton');
-	tabHerbe := initPrairieByHand('herbe');
-	tabLoup := initPrairieByHand('loup');
-	gen := initGeneration2(tabMouton, tabHerbe, tabLoup);
-	runGeneration2(gen, 20);
+	args := handleArgs();
+	IF args.typeRun = 'V' THEN
+		gen := initGeneration2(args.vecteur2, args.vecteur1, args.vecteur3);
+	IF args.typeRun = 'R' THEN
+		gen := initGeneration2(initRandom(args.random2), initRandom(args.random1), initRandom(args.random3));
+	runGeneration2(gen, args.nbrGen, args.delay);
 END.
