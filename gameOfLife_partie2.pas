@@ -44,7 +44,6 @@ BEGIN
 
 	FOR i := 0 TO M - 1 DO
 	BEGIN
-		writeln('je suis la', i, M);
 		IF (listePosition[i].x > 0) and (listePosition[i].y > 0) THEN
 			prairie[listePosition[i].x, listePosition[i].y] := NOUV_HERBE_P2;
 	END;

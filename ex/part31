@@ -2,4 +2,4 @@ Mouton
 RandomH = 10
 RandomM = 10
 NombreGeneration = 100
-Delay = 250
+Delay = 0

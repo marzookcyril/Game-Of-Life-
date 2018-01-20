@@ -81,7 +81,6 @@ BEGIN
 			inc(counterElement);
 		END;
 	END;
-	writeln('je suis la');
 
 	FOR i := 0 TO M - 1 DO
 	BEGIN
@@ -183,7 +182,7 @@ END;
 PROCEDURE calculerNextGenerationMouton(mouton : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2);
 VAR
 	nouveauMouton, bebeMouton : typeElement;
-	k, l, i, ii, j : integer;
+	k, l, i, j : integer;
 	herbe : typePosition;
 BEGIN
 	// le mouton veilli
@@ -294,7 +293,7 @@ BEGIN
 	END;
 END;
 
-FUNCTION calculerNextGenerationHerbe(herbe : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2) : typeElement;
+PROCEDURE calculerNextGenerationHerbe(herbe : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2);
 VAR
 	nouvelleHerbe, bebeHerbe : typeElement;
 	k, l, i, j : integer;
@@ -348,7 +347,7 @@ END;
 FUNCTION calculerNouvelleGeneration(gen : typeGeneration2) : typeGeneration2;
 VAR
 	nextGen : typeGeneration2;
-	i, elementCounter : integer;
+	i : integer;
 BEGIN
 
 	// on calcul pour chaque element (mouton, herbe) de la generation precedente
@@ -442,7 +441,6 @@ BEGIN
 			position.x := Random(N);
 			position.y := Random(N);
 		END;
-		writeln(i, ',', position.x, ',', position.y);
 		tab[i] := position;
 		inc(i);
 		dec(nbrDeCellules);
@@ -459,11 +457,10 @@ END;
 VAR
 	gen :  typeGeneration2;
 	args : importFile;
-	i : integer;
 BEGIN
 	args := handleArgs();
 	IF args.typeRun = 'V' THEN
-		gen := initGeneration2(args.vecteur2, args.vecteur1);
+		gen := initGeneration2(args.vecteur1, args.vecteur2);
 	IF args.typeRun = 'R' THEN
 		gen := initGeneration2(initRandom(args.random2), initRandom(args.random1));
 	writeln('nbrGen :', args.nbrGen, args.random2, args.random1);

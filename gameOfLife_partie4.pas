@@ -143,7 +143,6 @@ BEGIN
 			END;
 
 			position.x := strtoint(copy(s, numberBeginIndex + 1, numberCounter));
-			writeln('posX : ', position.x);
 
 			WHILE (not isNumber(s[j])) and (s[j] <> ')') and (j < length(s)) DO
 			BEGIN
@@ -160,7 +159,6 @@ BEGIN
 			END;
 
 			position.y := strtoint(copy(s, numberBeginIndex + 1, numberCounter));
-			writeln('posY : ', position.y, ', n : ', tabCounter);
 
 			i := j;
 			tableau[tabCounter] := position;
@@ -183,7 +181,6 @@ VAR
 	//ligne : string;
 	ligne : longString;
 	fic   : text;
-	i : integer;
 	textPartie, delayHasChange : boolean;
 BEGIN
 	delayHasChange := False;
@@ -309,7 +306,6 @@ END;
 PROCEDURE logPosToFile (tab : tabPrint; typeSim : string);
 VAR
 	i, j : integer;
-	moutons, herbe, loups : string;
 	fichier : text;
 BEGIN
 	IF outputFileSave <> '' THEN
@@ -318,7 +314,10 @@ BEGIN
 		append(fichier);
 		writeln(fichier, typeSim);
 		writeln(fichier);
-		write(fichier, 'PositionH = [');
+		IF (typeSim = 'Vie') or (typeSim = 'Herbe') THEN
+			write(fichier, 'Position = [')
+		ELSE
+		 	write(fichier, 'PositionH = [');
 		FOR i := 0 TO N - 1 DO
 		BEGIN
 			FOR j := 0 TO N - 1 DO
@@ -330,29 +329,36 @@ BEGIN
 		write(fichier, ']');
 		writeln(fichier);
 
-		write(fichier, 'PositionM = [');
-		FOR i := 0 TO N - 1 DO
+		IF not ((typeSim = 'Vie') or (typeSim = 'Herbe')) THEN
 		BEGIN
-			FOR j := 0 TO N - 1 DO
+			write(fichier, 'PositionM = [');
+			FOR i := 0 TO N - 1 DO
 			BEGIN
-				IF (pos('m',tab[i, j]) <> 0) THEN
-					write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+				FOR j := 0 TO N - 1 DO
+				BEGIN
+					writeln(tab[i, j]);
+					IF (pos('m',tab[i, j]) <> 0) THEN
+						write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+				END;
 			END;
-		END;
-		write(fichier, ']');
-		writeln(fichier);
+			write(fichier, ']');
+			writeln(fichier);
 
-		write(fichier, 'PositionL = [');
-		FOR i := 0 TO N - 1 DO
-		BEGIN
-			FOR j := 0 TO N - 1 DO
+			IF (typeSim = 'Loup') THEN
 			BEGIN
-				IF (pos('l',tab[i, j]) <> 0) THEN
-					write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+				write(fichier, 'PositionL = [');
+				FOR i := 0 TO N - 1 DO
+				BEGIN
+					FOR j := 0 TO N - 1 DO
+					BEGIN
+						IF (pos('l',tab[i, j]) <> 0) THEN
+							write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+					END;
+				END;
+				write(fichier, ']');
+				writeln(fichier);
 			END;
 		END;
-		write(fichier, ']');
-		writeln();
 		close(fichier);
  	END;
 END;
@@ -386,7 +392,6 @@ VAR
 	i, j, nbrHerbe, nbrMouton, nbrLoup : integer;
 	fichier : text;
 BEGIN
-	writeln('je suis la');
 	assign(fichier, logFile);
 	append(fichier);
 	nbrHerbe := 0;
@@ -467,12 +472,11 @@ BEGIN
 			logGrille[i,j] := gen.grille[i, j];
 		END;
 	END;
+	convertGrillePart3 := logGrille;
 END;
 
 
 PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
-VAR
-	i, j : integer;
 BEGIN
 	IF (outputFileImage <> '') or (logFile <> '') THEN
 	BEGIN
@@ -484,9 +488,6 @@ BEGIN
 END;
 
 PROCEDURE logGrillePart2(gen : typeGeneration; ng : integer);
-VAR
-	i, j : integer;
-	logGrille : tabPrint;
 BEGIN
 	IF (outputFileImage <> '') or (logFile <> '') THEN
 	BEGIN
@@ -498,11 +499,7 @@ BEGIN
 END;
 
 PROCEDURE logGrillePart3(gen : typeGeneration2; ng : integer);
-VAR
-	i, j : integer;
-	logGrille : tabPrint;
 BEGIN
-	writeln(outputFileImage);
 	IF (outputFileImage <> '') or (logFile <> '') THEN
 	BEGIN
 		if outputFileImage <> '' THEN

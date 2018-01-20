@@ -253,7 +253,7 @@ END;
 PROCEDURE calculerNextGenerationMouton(mouton : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2);
 VAR
 	nouveauMouton, bebeMouton : typeElement;
-	k, l, i, ii, j : integer;
+	k, l, i, j : integer;
 	herbe : typePosition;
 BEGIN
 	IF ((oldGrille[mouton.position.x, mouton.position.y] <> MOUTON_ET_LOUP) and (oldGrille[mouton.position.x, mouton.position.y] <> TOUT)) THEN
@@ -370,7 +370,7 @@ END;
 PROCEDURE calculerNextGenerationLoup(loup : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2);
 VAR
 	nouveauLoup, bebeLoup : typeElement;
-	k, l, i, ii, j : integer;
+	k, l, i, j : integer;
 	mouton : typePosition;
 BEGIN
 	// le mouton veilli
@@ -481,7 +481,7 @@ BEGIN
 	END;
 END;
 
-FUNCTION calculerNextGenerationHerbe(herbe : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2) : typeElement;
+PROCEDURE calculerNextGenerationHerbe(herbe : typeElement; oldGrille : typeGrilleString; VAR nextGen : typeGeneration2);
 VAR
 	nouvelleHerbe, bebeHerbe : typeElement;
 	k, l, i, j : integer;
@@ -535,7 +535,7 @@ END;
 FUNCTION calculerNouvelleGeneration(gen : typeGeneration2) : typeGeneration2;
 VAR
 	nextGen : typeGeneration2;
-	i, elementCounter : integer;
+	i : integer;
 BEGIN
 
 	// on calcul pour chaque element (mouton, herbe) de la generation precedente
@@ -583,7 +583,7 @@ BEGIN
 	grilleNonVide := result;
 END;
 
-PROCEDURE runGeneration2(gen : typeGeneration2; nombreGen, delayValue : INTEGER);
+FUNCTION runGeneration2(gen : typeGeneration2; nombreGen, delayValue : INTEGER) : typeGeneration2;
 VAR
 	i : integer;
 BEGIN
@@ -593,7 +593,6 @@ BEGIN
 	BEGIN
 		ClrScr;
 		writeln('Nouvelle Generation : ', i);
-		writeln(gen.tailleVecteurObjects);
 		gen := calculerNouvelleGeneration(gen);
 		afficherGrille(gen);
 		IF (nombreGen > 0) THEN
@@ -601,6 +600,7 @@ BEGIN
 		Delay(delayValue);
 		inc(nombreGeneration);
 	END;
+	runGeneration2 := gen;
 END;
 
 // regarde si une pos est dans le tableau
@@ -635,7 +635,6 @@ BEGIN
 			position.x := Random(N);
 			position.y := Random(N);
 		END;
-		writeln(i, ',', position.x, ',', position.y);
 		tab[i] := position;
 		inc(i);
 		dec(nbrDeCellules);
@@ -651,7 +650,6 @@ END;
 
 
 VAR
-	tabMouton, tabHerbe, tabLoup : tabPosition;
 	gen :  typeGeneration2;
 	args : importFile;
 BEGIN
@@ -660,5 +658,6 @@ BEGIN
 		gen := initGeneration2(args.vecteur2, args.vecteur1, args.vecteur3);
 	IF args.typeRun = 'R' THEN
 		gen := initGeneration2(initRandom(args.random2), initRandom(args.random1), initRandom(args.random3));
-	runGeneration2(gen, args.nbrGen, args.delay);
+	gen := runGeneration2(gen, args.nbrGen, args.delay);
+	logPosToFile(convertGrillePart3(gen), 'Loup');
 END.
