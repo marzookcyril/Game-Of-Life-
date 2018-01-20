@@ -2,5 +2,5 @@ Loup
 RandomH = 10
 RandomM = 10
 RandomL = 10
-NombreGeneration = 100
-Delay = 250
+NombreGeneration = 1
+Delay = 1000

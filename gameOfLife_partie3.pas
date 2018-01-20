@@ -390,7 +390,7 @@ BEGIN
 	grilleNonVide := result;
 END;
 
-PROCEDURE runGeneration2(gen : typeGeneration2; nombreGen, delayValue : INTEGER);
+FUNCTION runGeneration2(gen : typeGeneration2; nombreGen, delayValue : INTEGER) : typeGeneration2;
 VAR
 	i : integer;
 BEGIN
@@ -407,6 +407,7 @@ BEGIN
 		Delay(delayValue);
 		inc(nombreGeneration);
 	END;
+	runGeneration2 := gen;
 END;
 
 // regarde si une pos est dans le tableau
@@ -467,5 +468,6 @@ BEGIN
 		gen := initGeneration2(initRandom(args.random2), initRandom(args.random1));
 	writeln('nbrGen :', args.nbrGen, args.random2, args.random1);
 	afficherGrille(gen);
-	runGeneration2(gen, args.nbrGen, args.delay);
+	gen := runGeneration2(gen, args.nbrGen, args.delay);
+	logPosToFile(convertGrillePart3(gen), 'Mouton');
 END.

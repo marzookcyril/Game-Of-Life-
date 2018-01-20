@@ -311,5 +311,6 @@ BEGIN
 	else
 		grille := remplirGrille(args.vecteur1, args.nbrPos1);
 
-	run(grille, args.nbrGen, args.delay);
+	grille := run(grille, args.nbrGen, args.delay);
+	logPosToFile(convertGrillePart1(grille), 'Vie');
 END.

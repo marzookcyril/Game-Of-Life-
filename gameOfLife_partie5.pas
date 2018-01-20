@@ -552,6 +552,7 @@ BEGIN
 		BEGIN
 			calculerNextGenerationMouton(gen.vecteurObjects[i], gen.grille, nextGen);
 		END;
+
 		// on traite les herbes
 		IF gen.vecteurObjects[i].element = ELEMENT_HERBE THEN
 		BEGIN

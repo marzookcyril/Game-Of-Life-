@@ -4,7 +4,7 @@ INTERFACE
 uses Crt, Process, sysutils;
 
 VAR
-	outPutFile : string;
+	outputFileImage, outputFileSave : string;
 	logFile : string;
 
 CONST
@@ -100,6 +100,10 @@ FUNCTION  handleArgs() : importFile;
 PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
 PROCEDURE logGrillePart2(gen : typeGeneration; ng : integer);
 PROCEDURE logGrillePart3(gen : typeGeneration2; ng : integer);
+PROCEDURE logPosToFile (tab : tabPrint; typeSim : string);
+FUNCTION convertGrillePart1(grille : typeGrille) : tabPrint;
+FUNCTION convertGrillePart2 (gen : typeGeneration) : tabPrint;
+FUNCTION convertGrillePart3(gen : typeGeneration2) : tabPrint;
 
 IMPLEMENTATION
 
@@ -302,6 +306,57 @@ BEGIN
 	END;
 END;
 
+PROCEDURE logPosToFile (tab : tabPrint; typeSim : string);
+VAR
+	i, j : integer;
+	moutons, herbe, loups : string;
+	fichier : text;
+BEGIN
+	IF outputFileSave <> '' THEN
+	BEGIN
+		assign(fichier, outputFileSave);
+		append(fichier);
+		writeln(fichier, typeSim);
+		writeln(fichier);
+		write(fichier, 'PositionH = [');
+		FOR i := 0 TO N - 1 DO
+		BEGIN
+			FOR j := 0 TO N - 1 DO
+			BEGIN
+				IF (pos('#',tab[i, j]) <> 0) or (pos('h',tab[i, j]) <> 0) THEN
+					write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+			END;
+		END;
+		write(fichier, ']');
+		writeln(fichier);
+
+		write(fichier, 'PositionM = [');
+		FOR i := 0 TO N - 1 DO
+		BEGIN
+			FOR j := 0 TO N - 1 DO
+			BEGIN
+				IF (pos('m',tab[i, j]) <> 0) THEN
+					write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+			END;
+		END;
+		write(fichier, ']');
+		writeln(fichier);
+
+		write(fichier, 'PositionL = [');
+		FOR i := 0 TO N - 1 DO
+		BEGIN
+			FOR j := 0 TO N - 1 DO
+			BEGIN
+				IF (pos('l',tab[i, j]) <> 0) THEN
+					write(fichier, '(' + inttostr(i) + ' ' + inttostr(j) + ')');
+			END;
+		END;
+		write(fichier, ']');
+		writeln();
+		close(fichier);
+ 	END;
+END;
+
 // Permet d'enregistrer chaque simulation (grille) dans un
 // fichier
 PROCEDURE logGrilleToFile(logGrille : tabPrint; ng : integer);
@@ -309,7 +364,7 @@ VAR
 	i, j : integer;
 	fichier : text;
 BEGIN
-	assign(fichier, outPutFile);
+	assign(fichier, outputFileImage);
 	append(fichier);
 	writeln(fichier, 'Generation n°', ng);
 	FOR i := 0 TO N - 1 DO
@@ -357,32 +412,74 @@ BEGIN
 	close(fichier);
 END;
 
+
 {
 	logGrillePartX sont des procedure pour convertir une grille (de chaque partie)
 	en grille général. Ce sont un peu les drivers de la partie 4.
 }
 
-PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
+FUNCTION convertGrillePart1(grille : typeGrille) : tabPrint;
 VAR
 	i, j : integer;
 	logGrille : tabPrint;
 BEGIN
-	IF (outPutFile <> '') or (logFile <> '') THEN
+	FOR i := 0 TO N - 1 DO
 	BEGIN
-		FOR i := 0 TO N - 1 DO
+		FOR j := 0 TO N - 1 DO
 		BEGIN
-			FOR j := 0 TO N - 1 DO
-			BEGIN
-				IF grille[i, j] = 1 THEN
-					logGrille[i, j] := ' #'
-				ELSE
-					logGrille[i, j] := ' .';
-			END;
+			IF grille[i, j] = 1 THEN
+				logGrille[i, j] := ' #'
+
+			ELSE
+				logGrille[i, j] := ' .';
 		END;
-		IF outPutFile <> '' THEN
-			logGrilleToFile(logGrille, ng);
+	END;
+	convertGrillePart1 := logGrille;
+END;
+
+FUNCTION convertGrillePart2 (gen : typeGeneration) : tabPrint;
+VAR
+	i, j : integer;
+	logGrille : tabPrint;
+BEGIN
+	FOR i := 0 TO N - 1 DO
+	BEGIN
+		FOR j := 0 TO N - 1 DO
+		BEGIN
+			IF(gen[i,j].age >= 0) THEN
+				logGrille[i,j] := ' #'
+			ELSE
+				logGrille[i,j] := ' .';
+		END;
+	END;
+	convertGrillePart2 := logGrille;
+END;
+
+FUNCTION convertGrillePart3(gen : typeGeneration2) : tabPrint;
+VAR
+	i, j : integer;
+	logGrille : tabPrint;
+BEGIN
+	FOR i := 0 TO N - 1 DO
+	BEGIN
+		FOR j := 0 TO N - 1 DO
+		BEGIN
+			logGrille[i,j] := gen.grille[i, j];
+		END;
+	END;
+END;
+
+
+PROCEDURE logGrillePart1(grille : typeGrille; ng : integer);
+VAR
+	i, j : integer;
+BEGIN
+	IF (outputFileImage <> '') or (logFile <> '') THEN
+	BEGIN
+		IF outputFileImage <> '' THEN
+			logGrilleToFile(convertGrillePart1(grille), ng);
 		IF logFile <> '' THEN
-			logValueToFile(logGrille, ng);
+			logValueToFile(convertGrillePart1(grille), ng);
 	END;
 END;
 
@@ -391,23 +488,12 @@ VAR
 	i, j : integer;
 	logGrille : tabPrint;
 BEGIN
-	IF (outPutFile <> '') or (logFile <> '') THEN
+	IF (outputFileImage <> '') or (logFile <> '') THEN
 	BEGIN
-		writeln(outputfile);
-		FOR i := 0 TO N - 1 DO
-		BEGIN
-			FOR j := 0 TO N - 1 DO
-			BEGIN
-				IF(gen[i,j].age >= 0) THEN
-					logGrille[i,j] := ' #'
-				ELSE
-					logGrille[i,j] := ' .';
-			END;
-		END;
-		IF outPutFile <> '' THEN
-			logGrilleToFile(logGrille, ng);
+		IF outputFileImage <> '' THEN
+			logGrilleToFile(convertGrillePart2(gen), ng);
 		IF logFile <> '' THEN
-			logValueToFile(logGrille, ng);
+			logValueToFile(convertGrillePart2(gen), ng);
 	END;
 END;
 
@@ -416,20 +502,13 @@ VAR
 	i, j : integer;
 	logGrille : tabPrint;
 BEGIN
-	writeln(outputfile);
-	IF (outPutFile <> '') or (logFile <> '') THEN
+	writeln(outputFileImage);
+	IF (outputFileImage <> '') or (logFile <> '') THEN
 	BEGIN
-		FOR i := 0 TO N - 1 DO
-		BEGIN
-			FOR j := 0 TO N - 1 DO
-			BEGIN
-				logGrille[i,j] := gen.grille[i, j];
-			END;
-		END;
-		if outPutFile <> '' THEN
-			logGrilleToFile(logGrille, ng);
+		if outputFileImage <> '' THEN
+			logGrilleToFile(convertGrillePart3(gen), ng);
 		if logFile <> '' THEN
-			logValueToFile(logGrille, ng);
+			logValueToFile(convertGrillePart3(gen), ng);
 	END;
 END;
 
@@ -462,7 +541,8 @@ BEGIN
 			writeln('Projet Informatique - Paul Planchon et Cyril Marzook');
 			writeln('HELP : -i permet d''entrer un fichier génération.');
 			writeln('       -o permet d''enregistrer les simulations.');
-			writeln('       -l permet des valeur numériques sur les simulations.');
+			writeln('       -s permet d''enregistrer UNE IMAGE des simulations.');
+			writeln('       -l permet des valeur numériques sur les simulations (creer un fichier CSV).');
 			writeln('       -h affiche cette commande.');
 			halt(1);
 		END;
@@ -473,11 +553,11 @@ BEGIN
 			genToRun := True;
 		END;
 
-		IF (ParamStr(i) = '-o') THEN
+		IF (ParamStr(i) = '-s') THEN
 		BEGIN
 			IF FileExists(ParamStr(i+1)) THEN
 			BEGIN
-				outputFile := ParamStr(i+1);
+				outputFileImage := ParamStr(i+1);
 				genToRun := True;
 			END
 			ELSE
@@ -485,7 +565,7 @@ BEGIN
 				// si le fichier n'existe pas (possible) on le créé
 				command := 'touch ' + ParamStr(i+1);
 				RunCommand(command, foo);
-				outputFile := ParamStr(i+1);
+				outputFileImage := ParamStr(i+1);
 				genToRun := True;
 			END;
 		END;
@@ -504,6 +584,25 @@ BEGIN
 				logFile := ParamStr(i+1);
 			END;
 		END;
+
+
+		IF (ParamStr(i) = '-o') THEN
+		BEGIN
+			IF FileExists(ParamStr(i+1)) THEN
+			BEGIN
+				outputFileSave := ParamStr(i+1);
+				genToRun := True;
+			END
+			ELSE
+			BEGIN
+				// si le fichier n'existe pas (possible) on le créé
+				command := 'touch ' + ParamStr(i+1);
+				RunCommand(command, foo);
+				outputFileSave := ParamStr(i+1);
+				genToRun := True;
+			END;
+		END;
+
 	END;
 
 	IF (genToRun) THEN

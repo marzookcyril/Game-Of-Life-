@@ -205,5 +205,6 @@ BEGIN
 		prairie := initPrairie(args.random1)
 	else
 		prairie := initialiserGeneration(args.vecteur1);
-	run(prairie, args.nbrGen, args.delay);
+	prairie := run(prairie, args.nbrGen, args.delay);
+	logPosToFile(convertGrillePart2(prairie), 'Herbe');
 END.
